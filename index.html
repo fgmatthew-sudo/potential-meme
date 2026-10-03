@@ -1,0 +1,247 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Reading List</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#faf7f2;--fg:#2a2622;--mut:#7a7168;--card:#fff;--bd:#e4ddd2;--ok:#2f7d4f;--okbg:#e3f3e9;--ac:#8a4b2a;--er:#c0392b}
+@media(prefers-color-scheme:dark){:root{--bg:#1b1917;--fg:#eee8df;--mut:#a39a8e;--card:#262321;--bd:#3a3531;--ok:#6fcf97;--okbg:#1f3a2a;--ac:#e0a47e;--er:#ff8a7a}}
+*{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font:15px/1.4 Georgia,'Times New Roman',serif;padding:12px 14px 40px;max-width:900px;margin:auto}
+h1{font-size:22px;margin:4px 0 10px}h2{font-size:17px;margin:20px 0 8px;color:var(--ac)}
+.bar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.top{align-items:center;justify-content:space-between}
+input,select,textarea,button{font:inherit;font-size:14px;color:var(--fg);background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:7px 9px;max-width:100%}
+input[type=search]{flex:1 1 100%}select{flex:1 1 130px}
+button{cursor:pointer}button[aria-pressed=true]{background:var(--okbg);border-color:var(--ok);color:var(--ok)}
+.cnt{color:var(--mut);font-size:13px;margin:4px 0}.err{color:var(--er)}
+.row{display:flex;gap:12px;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:10px;margin-bottom:8px}
+.cov{flex:0 0 56px;height:84px;border-radius:5px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:9px;padding:3px;color:#fff;overflow:hidden}
+.main{flex:1;min-width:0}.t{font-weight:bold;cursor:pointer;background:none;border:0;padding:0;text-align:left;color:var(--fg)}
+.m{color:var(--mut);font-size:13px}.tg{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}.tg button{padding:3px 9px;font-size:13px}
+dialog{background:var(--card);color:var(--fg);border:1px solid var(--bd);border-radius:12px;max-width:520px;width:calc(100% - 24px);max-height:90vh;overflow:auto}
+dialog::backdrop{background:#0008}dl{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;margin:10px 0;font-size:14px}dt{color:var(--mut)}dd{margin:0}
+textarea{width:100%;min-height:70px}
+.fm label{display:block;font-size:13px;color:var(--mut);margin-top:8px}.fm input:not([type=checkbox]),.fm textarea{width:100%}.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#login{text-align:center;margin-top:20vh}
+</style></head><body>
+
+<div id="login" hidden>
+<h1>📚 My Reading List</h1>
+<p class="m">Sign in to see your books.</p>
+<button id="gin">Sign in with Google</button>
+<p id="lerr" class="m err" role="alert"></p>
+</div>
+
+<div id="app" hidden>
+<div class="bar top"><h1>📚 My Reading List</h1><span><span class="m" id="who"></span> <button id="out">Sign out</button></span></div>
+<div class="bar">
+<input type="search" id="q" placeholder="Search title, author, series, genre, ISBN" aria-label="Search">
+<select id="fg" aria-label="Genre"></select><select id="fa" aria-label="Author"></select><select id="fs" aria-label="Series"></select>
+<select id="fo" aria-label="Owned"><option value="">Owned: any</option><option value="1">● Owned</option><option value="0">○ Not owned</option></select>
+<select id="fr" aria-label="Read"><option value="">Read: any</option><option value="1">✓ Read</option><option value="0">○ Unread</option></select>
+<select id="so" aria-label="Sort"></select>
+<button id="gv" aria-pressed="true">Group by series</button>
+<button id="ad">+ Add book</button><button id="imp">Import CSV</button><button id="ex">Export CSV</button>
+</div>
+<div class="cnt" id="cnt"></div><div class="cnt err" id="msg" role="status"></div><div id="list"></div>
+</div>
+
+<dialog id="dlg"></dialog><dialog id="fd"></dialog><dialog id="im"></dialog>
+<datalist id="dl_a"></datalist><datalist id="dl_g"></datalist><datalist id="dl_s"></datalist>
+
+<script>
+// ====== CONFIG: paste your values from Supabase (Project Settings -> API) ======
+const SUPABASE_URL = "https://xagqvrmlwqbwlmlljomk.supabase.co/rest/v1/";
+const SUPABASE_ANON_KEY = "sb_publishable_nu06QaBn3cq3PVMvxAp8hw_aBQMnC_N";   // anon/publishable key only. NEVER the service_role key.
+// ===============================================================================
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const msg=t=>{$("msg").textContent=t||""};
+let sb,uid=null,authors=[],genres=[],series=[],books=[];
+const A=id=>authors.find(x=>x.author_id==id)||{name:"?",sort_name:"?"};
+const G=id=>genres.find(x=>x.genre_id==id)||{name:"?"};
+const S=id=>series.find(x=>x.series_id==id)||{name:"?"};
+
+/* ---------- auth ---------- */
+function showLogin(err){$("app").hidden=true;$("login").hidden=false;if(err){$("lerr").textContent=err}}
+async function onSession(s){
+  if(!s){uid=null;showLogin();return}
+  if(s.user.id===uid)return;
+  uid=s.user.id;$("login").hidden=true;$("app").hidden=false;$("who").textContent=s.user.email||"";
+  await load();
+}
+if(SUPABASE_URL.startsWith("YOUR_")){showLogin("Set SUPABASE_URL and SUPABASE_ANON_KEY at the top of index.html.");$("gin").hidden=true}
+else if(!window.supabase){showLogin("Could not load the Supabase library. Check your connection.");$("gin").hidden=true}
+else{
+  sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+  // do not await Supabase calls inside this callback; defer them
+  sb.auth.onAuthStateChange((ev,s)=>{if(["INITIAL_SESSION","SIGNED_IN","SIGNED_OUT"].includes(ev))setTimeout(()=>onSession(s),0)});
+}
+$("gin").onclick=async()=>{const {error}=await sb.auth.signInWithOAuth({provider:"google",options:{redirectTo:location.origin+location.pathname}});if(error)$("lerr").textContent=error.message};
+$("out").onclick=()=>sb.auth.signOut();
+
+/* ---------- data ---------- */
+async function load(){
+  msg("Loading…");
+  const r=await Promise.all(["authors","genres","series","books"].map(t=>sb.from(t).select("*")));
+  const e=r.find(x=>x.error);if(e){msg("Load failed: "+e.error.message);return}
+  [authors,genres,series,books]=r.map(x=>x.data);msg("");fill();render();
+}
+async function upd(b,patch){
+  const old={};for(const k in patch)old[k]=b[k];Object.assign(b,patch);
+  const {error}=await sb.from("books").update(patch).eq("book_id",b.book_id);
+  if(error){Object.assign(b,old);msg("Save failed: "+error.message);return false}
+  msg("");return true;
+}
+async function ent(tbl,list,name,mk){
+  let x=find(list,name);
+  if(!x){const {data,error}=await sb.from(tbl).insert(mk(name.trim())).select().single();if(error)throw error;list.push(data);x=data}
+  return x;
+}
+async function put(d,old){
+  const au=await ent("authors",authors,d.author,n=>({name:n,sort_name:sortName(n)}));
+  const ge=await ent("genres",genres,d.genre,n=>({name:n}));
+  const sn=nz(d.series),se=sn?await ent("series",series,sn,n=>({name:n,author_id:au.author_id,genre_id:ge.genre_id})):null;
+  const isb=nz(d.isbn_13);
+  const f={title:d.title.trim(),subtitle:nz(d.subtitle),author_id:au.author_id,series_id:se?se.series_id:null,genre_id:ge.genre_id,
+    series_order:num(d.series_order),reading_order:num(d.reading_order),publication_order:num(d.publication_order),
+    publication_date:nz(d.publication_date),isbn_13:isb?isb.replace(/-/g,""):null,description:nz(d.description),
+    owned:d.owned,read:d.read,notes:"notes" in d?nz(d.notes):old?old.notes:null};
+  if(old){const {data,error}=await sb.from("books").update(f).eq("book_id",old.book_id).select().single();if(error)throw error;Object.assign(old,data);return old}
+  const sl=slug([ge.name,au.name.split(" ").pop(),sn||"",f.title].filter(Boolean).join(" "));
+  let u=sl,i=2;while(books.some(b=>b.slug==u))u=sl+"-"+i++;
+  const {data,error}=await sb.from("books").insert({...f,slug:u}).select().single();if(error)throw error;
+  books.push(data);return data;
+}
+async function prune(){
+  const sd=series.filter(s=>!books.some(b=>b.series_id==s.series_id)),
+        ad=authors.filter(a=>!books.some(b=>b.author_id==a.author_id)),
+        gd=genres.filter(g=>!books.some(b=>b.genre_id==g.genre_id));
+  for(const [t,k,dead] of [["series","series_id",sd],["authors","author_id",ad],["genres","genre_id",gd]])
+    if(dead.length){const {error}=await sb.from(t).delete().in(k,dead.map(x=>x[k]));if(error){msg("Cleanup failed: "+error.message);return}}
+  series=series.filter(x=>!sd.includes(x));authors=authors.filter(x=>!ad.includes(x));genres=genres.filter(x=>!gd.includes(x));fill();
+}
+
+/* ---------- helpers ---------- */
+const sortName=n=>{const p=n.trim().split(/\s+/);return p.length<2?n.trim():p[p.length-1]+", "+p.slice(0,-1).join(" ")};
+const slug=s=>s.toLowerCase().replace(/&/g,"and").replace(/['’.]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+const find=(l,n)=>l.find(x=>x.name.toLowerCase()==n.trim().toLowerCase());
+const num=v=>{if(v==null||String(v).trim()==="")return null;const x=Number(v);return isNaN(x)?NaN:x};
+const bl=v=>{const s=String(v??"").trim().toLowerCase();if(!s)return false;if(["true","yes","y","1"].includes(s))return true;if(["false","no","n","0"].includes(s))return false};
+const nz=v=>{v=v==null?"":String(v).trim();return v===""?null:v};
+function val(d){const e=[];if(!nz(d.title))e.push("title is required");if(!nz(d.author))e.push("author is required");if(!nz(d.genre))e.push("genre is required");
+  for(const k of["series_order","reading_order","publication_order"])if(isNaN(num(d[k])))e.push(k+" must be numeric");
+  if(nz(d.publication_date)&&!/^\d{4}-\d{2}-\d{2}$/.test(nz(d.publication_date)))e.push("publication_date must be YYYY-MM-DD");
+  const i=nz(d.isbn_13);if(i&&!/^\d{13}$/.test(i.replace(/-/g,"")))e.push("isbn_13 must be 13 digits");
+  if(d.owned===undefined)e.push("owned must be true/false");if(d.read===undefined)e.push("read must be true/false");return e}
+function hue(s){let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))%360;return h}
+
+/* ---------- filters / render ---------- */
+function fill(){
+  const m={fg:["Genre: any",genres,"genre_id"],fa:["Author: any",authors,"author_id"]};
+  for(const id in m){const el=$(id),v=el.value;el.innerHTML=`<option value="">${m[id][0]}</option>`+m[id][1].map(x=>`<option value="${esc(x[m[id][2]])}">${esc(x.name)}</option>`).join("");el.value=v}
+  const sv=$("fs").value;$("fs").innerHTML='<option value="">Series: any</option><option value="__s">Standalone only</option>'+series.map(s=>`<option value="${esc(s.series_id)}">${esc(s.name)}</option>`).join("");$("fs").value=sv;
+  for(const[id,l]of[["dl_a",authors],["dl_g",genres],["dl_s",series]])$(id).innerHTML=l.map(x=>`<option value="${esc(x.name)}">`).join("");
+}
+const sorts={reading_order:"Reading order",title:"Title",author:"Author",genre:"Genre",series:"Series",series_order:"Series order",publication_date:"Publication date",owned:"Owned",read:"Read"};
+$("so").innerHTML=Object.entries(sorts).map(([k,v])=>`<option value="${k}">Sort: ${v}</option>`).join("");
+function key(b,k){switch(k){case"title":return b.title.toLowerCase();case"author":return A(b.author_id).sort_name;case"genre":return G(b.genre_id).name;case"series":return b.series_id?S(b.series_id).name:null;case"owned":case"read":return b[k]?0:1;default:return b[k]}}
+function cmp(k){return(a,b)=>{const x=key(a,k),y=key(b,k);if(x==null&&y==null)return 0;if(x==null)return 1;if(y==null)return -1;return x<y?-1:x>y?1:0}}
+function tog(b,f){const on=b[f],lab=f=="owned"?(on?"● Owned":"○ Not owned"):(on?"✓ Read":"○ Unread");return`<button aria-pressed="${on}" data-id="${esc(b.book_id)}" data-f="${f}">${lab}</button>`}
+function row(b){const s=b.series_id?esc(S(b.series_id).name):"Standalone";
+  return`<div class="row"><div class="cov" style="background:hsl(${hue(b.book_id)} 35% 38%)" role="img" aria-label="Cover of ${esc(b.title)} unavailable">[Book Cover Unavailable]</div><div class="main"><button class="t" data-open="${esc(b.book_id)}">${esc(b.title)}</button><div class="m">${esc(A(b.author_id).name)} · ${esc(G(b.genre_id).name)}</div><div class="m">Series: ${s}${b.reading_order!=null?` · Read #${b.reading_order}`:""}</div><div class="tg">${tog(b,"owned")}${tog(b,"read")}</div></div></div>`}
+function render(){
+  const q=$("q").value.toLowerCase(),g=$("fg").value,a=$("fa").value,s=$("fs").value,o=$("fo").value,r=$("fr").value,k=$("so").value;
+  const l=books.filter(b=>{
+    if(g&&b.genre_id!=g||a&&b.author_id!=a)return false;
+    if(s=="__s"?b.series_id:s&&b.series_id!=s)return false;
+    if(o&&b.owned!=(o=="1")||r&&b.read!=(r=="1"))return false;
+    if(q){const h=[b.title,A(b.author_id).name,b.series_id?S(b.series_id).name:"",G(b.genre_id).name,b.isbn_13||""].join(" ").toLowerCase();if(!h.includes(q))return false}
+    return true}).sort(cmp(k));
+  $("cnt").textContent=`${l.length} of ${books.length} books · ${l.filter(b=>b.owned).length} owned · ${l.filter(b=>b.read).length} read`;
+  if(!books.length){$("list").innerHTML='<p class="m">No books yet. Use “+ Add book” or “Import CSV”.</p>';return}
+  if(!l.length){$("list").innerHTML='<p class="m">No books match.</p>';return}
+  if($("gv").getAttribute("aria-pressed")=="true"){
+    const gr={};l.forEach(b=>(gr[b.series_id?S(b.series_id).name:"Standalone"]??=[]).push(b));
+    $("list").innerHTML=Object.keys(gr).sort((x,y)=>x=="Standalone"?1:y=="Standalone"?-1:x.localeCompare(y)).map(n=>`<h2>${esc(n)}</h2>`+gr[n].map(row).join("")).join("");
+  }else $("list").innerHTML=l.map(row).join("");
+}
+
+/* ---------- detail ---------- */
+function detail(id){
+  const b=books.find(x=>x.book_id==id);if(!b)return;const d=$("dlg"),v=x=>x==null?"—":esc(x);
+  d.innerHTML=`<h2 style="margin-top:0">${esc(b.title)}</h2><div class="m">${esc(A(b.author_id).name)}</div><dl><dt>Genre</dt><dd>${esc(G(b.genre_id).name)}</dd><dt>Series</dt><dd>${b.series_id?esc(S(b.series_id).name):"Standalone"}</dd><dt>Series order</dt><dd>${v(b.series_order)}</dd><dt>Reading order</dt><dd>${v(b.reading_order)}</dd><dt>Publication order</dt><dd>${v(b.publication_order)}</dd><dt>Published</dt><dd>${v(b.publication_date)}</dd><dt>ISBN-13</dt><dd>${v(b.isbn_13)}</dd></dl><p>${b.description?esc(b.description):'<span class="m">No description.</span>'}</p><div class="tg">${tog(b,"owned")}${tog(b,"read")}</div><p><label class="m" for="nt">My notes</label><textarea id="nt">${esc(b.notes)}</textarea></p><div class="tg"><button id="ed">Edit</button><button id="dl">Delete</button><button id="cl">Close</button></div>`;
+  d.showModal();
+  let tm;$("nt").oninput=e=>{clearTimeout(tm);const val=e.target.value||null;tm=setTimeout(()=>upd(b,{notes:val}),700)};
+  $("nt").onchange=e=>{clearTimeout(tm);upd(b,{notes:e.target.value||null})};
+  $("cl").onclick=()=>d.close();
+  $("ed").onclick=()=>{d.close();form(b)};
+  $("dl").onclick=async function(){
+    if(!this.dataset.c){this.dataset.c=1;this.textContent="Confirm delete?";return}
+    const {error}=await sb.from("books").delete().eq("book_id",b.book_id);
+    if(error){msg("Delete failed: "+error.message);d.close();return}
+    books.splice(books.indexOf(b),1);await prune();d.close();render();
+  };
+}
+
+/* ---------- add / edit ---------- */
+function form(b){
+  const d=$("fd"),o=b?{...b,author:A(b.author_id).name,genre:G(b.genre_id).name,series:b.series_id?S(b.series_id).name:""}:{owned:false,read:false};
+  const I=(k,l,ex="")=>`<label>${l}<input id="f_${k}" value="${esc(o[k])}" ${ex}></label>`;
+  d.innerHTML=`<h2 style="margin-top:0">${b?"Edit":"Add"} book</h2><div class="fm">${I("title","Title *")}${I("subtitle","Subtitle")}${I("author","Author *",'list="dl_a"')}${I("genre","Genre *",'list="dl_g"')}${I("series","Series (blank = standalone)",'list="dl_s"')}<div class="g2">${I("series_order","Series order",'inputmode="decimal"')}${I("reading_order","Reading order",'inputmode="decimal"')}${I("publication_order","Publication order",'inputmode="decimal"')}${I("publication_date","Published (YYYY-MM-DD)")}</div>${I("isbn_13","ISBN-13")}<label>Description<textarea id="f_description">${esc(o.description)}</textarea></label><label><input type="checkbox" id="f_owned" ${o.owned?"checked":""}> Owned</label><label><input type="checkbox" id="f_read" ${o.read?"checked":""}> Read</label></div><p id="fe" class="m err" role="alert"></p><div class="tg"><button type="button" id="fsv">Save</button><button type="button" id="fc">Cancel</button></div>`;
+  d.showModal();$("fc").onclick=()=>d.close();
+  $("fsv").onclick=async()=>{
+    const q={};["title","subtitle","author","genre","series","series_order","reading_order","publication_order","publication_date","isbn_13","description"].forEach(k=>q[k]=$("f_"+k).value);
+    q.owned=$("f_owned").checked;q.read=$("f_read").checked;
+    const e=val(q);if(e.length){$("fe").textContent=e.join("; ");return}
+    $("fsv").disabled=true;
+    try{await put(q,b);await prune();fill();d.close();render()}
+    catch(err){$("fe").textContent=err.message;$("fsv").disabled=false}
+  };
+}
+
+/* ---------- CSV import / export ---------- */
+function parseCSV(t){const rows=[];let r=[],f="",q=false;for(let i=0;i<t.length;i++){const c=t[i];if(q){if(c=='"'){if(t[i+1]=='"'){f+='"';i++}else q=false}else f+=c}else if(c=='"')q=true;else if(c==','){r.push(f);f=""}else if(c=='\n'||c=='\r'){if(c=='\r'&&t[i+1]=='\n')i++;r.push(f);rows.push(r);r=[];f=""}else f+=c}
+  if(f||r.length){r.push(f);rows.push(r)}return rows.filter(r=>r.some(x=>x.trim()))}
+async function doImport(t,out){
+  const rows=parseCSV(t.replace(/^﻿/,""));if(rows.length<2)return"No data rows found.";
+  const h=rows[0].map(x=>x.trim().toLowerCase()),miss=["title","author","genre"].filter(c=>!h.includes(c));
+  if(miss.length)return"Missing required column(s): "+miss.join(", ");
+  let ok=0,dup=0;const err=[];
+  for(let i=1;i<rows.length;i++){
+    const r=rows[i],d={};h.forEach((c,j)=>d[c]=r[j]);d.owned=bl(d.owned);d.read=bl(d.read);
+    const e=val(d);if(e.length){err.push(`Row ${i+1}: ${e.join("; ")}`);continue}
+    if(books.some(b=>b.title.toLowerCase()==d.title.trim().toLowerCase()&&A(b.author_id).name.toLowerCase()==d.author.trim().toLowerCase())){dup++;continue}
+    out.textContent=`Importing ${i} of ${rows.length-1}…`;
+    try{await put(d);ok++}catch(x){err.push(`Row ${i+1}: ${x.message}`)}
+  }
+  return`<strong>${ok} imported</strong>, ${dup} duplicate(s) skipped, ${err.length} invalid.`+(err.length?"<ul>"+err.slice(0,10).map(x=>`<li>${esc(x)}</li>`).join("")+(err.length>10?`<li>…and ${err.length-10} more</li>`:"")+"</ul>":"");
+}
+function imp(){
+  const d=$("im");d.innerHTML=`<h2 style="margin-top:0">Import CSV</h2><p class="m">Required columns: title, author, genre. Optional: subtitle, series, series_order, reading_order, publication_order, publication_date, isbn_13, owned, read, notes, description. Invalid rows and duplicates (same title + author) are skipped.</p><input type="file" id="fi" accept=".csv,text/csv"><div id="ir" class="m" role="status"></div><p><button type="button" id="ic">Close</button></p>`;
+  d.showModal();$("ic").onclick=()=>d.close();
+  $("fi").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();
+    r.onload=async()=>{const out=$("ir");out.innerHTML=await doImport(String(r.result),out);fill();render()};r.readAsText(f)};
+}
+function exp(){
+  const q=v=>{v=v==null?"":String(v);return/[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
+  const H=["book_id","title","subtitle","author","genre","series","series_order","reading_order","publication_order","publication_date","isbn_13","owned","read","notes","description"];
+  const rows=books.map(b=>[b.book_id,b.title,b.subtitle,A(b.author_id).name,G(b.genre_id).name,b.series_id?S(b.series_id).name:"",b.series_order,b.reading_order,b.publication_order,b.publication_date,b.isbn_13,b.owned,b.read,b.notes,b.description].map(q).join(","));
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["﻿"+[H.join(","),...rows].join("\r\n")],{type:"text/csv"}));
+  a.download="reading-list.csv";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+
+/* ---------- events ---------- */
+document.addEventListener("click",async e=>{
+  const t=e.target.closest("button");if(!t)return;
+  if(t.dataset.open)return detail(t.dataset.open);
+  if(t.dataset.f){
+    const b=books.find(x=>x.book_id==t.dataset.id);if(!b)return;
+    const refresh=()=>{if($("dlg").open)detail(b.book_id);else render()};
+    const p=upd(b,{[t.dataset.f]:!b[t.dataset.f]});refresh();await p;refresh();return;
+  }
+  if(t.id=="gv"){t.setAttribute("aria-pressed",t.getAttribute("aria-pressed")!="true");render()}
+  if(t.id=="ad")form();if(t.id=="imp")imp();if(t.id=="ex")exp();
+});
+["q","fg","fa","fs","fo","fr","so"].forEach(i=>$(i).addEventListener("input",render));
+</script></body></html>
