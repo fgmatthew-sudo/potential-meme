@@ -29,6 +29,7 @@ textarea{width:100%;min-height:70px}
 <p class="m">Sign in to see your books.</p>
 <button id="gin">Sign in with Google</button>
 <p id="lerr" class="m err" role="alert"></p>
+<p id="diag" class="m"></p>
 </div>
 
 <div id="app" hidden>
@@ -70,6 +71,9 @@ async function onSession(s){
   uid=s.user.id;$("login").hidden=true;$("app").hidden=false;$("who").textContent=s.user.email||"";
   await load();
 }
+// Diagnostic line (safe to show: it reveals only the project address and the start of the public key)
+try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v3`}
+catch(e){$("diag").textContent=`Check: the Supabase address is not a valid web address (${JSON.stringify(SUPABASE_URL)}) · app v3`}
 if(SUPABASE_URL.startsWith("YOUR_")){showLogin("Set SUPABASE_URL and SUPABASE_ANON_KEY at the top of index.html.");$("gin").hidden=true}
 else if(!window.supabase){showLogin("Could not load the Supabase library. Check your connection.");$("gin").hidden=true}
 else{
@@ -77,7 +81,18 @@ else{
   // do not await Supabase calls inside this callback; defer them
   sb.auth.onAuthStateChange((ev,s)=>{if(["INITIAL_SESSION","SIGNED_IN","SIGNED_OUT"].includes(ev))setTimeout(()=>onSession(s),0)});
 }
-$("gin").onclick=async()=>{const {error}=await sb.auth.signInWithOAuth({provider:"google",options:{redirectTo:location.origin+location.pathname}});if(error)$("lerr").textContent=error.message};
+$("gin").onclick=async()=>{
+  // Build the Google sign-in URL ourselves so we can make sure the apikey is attached to it.
+  $("lerr").textContent="";
+  try{
+    const {data,error}=await sb.auth.signInWithOAuth({provider:"google",options:{redirectTo:location.origin+location.pathname,skipBrowserRedirect:true}});
+    if(error||!data?.url){$("lerr").textContent="Could not start sign-in: "+(error?error.message:"no sign-in address returned");return}
+    const u=new URL(data.url);
+    if(!u.searchParams.has("apikey"))u.searchParams.set("apikey",SUPABASE_ANON_KEY);
+    $("lerr").textContent="Going to "+u.origin+u.pathname+" …";
+    location.assign(u.toString());
+  }catch(e){$("lerr").textContent="Sign-in failed: "+(e&&e.message?e.message:String(e))}
+};
 $("out").onclick=()=>sb.auth.signOut();
 
 /* ---------- data ---------- */
