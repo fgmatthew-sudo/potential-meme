@@ -77,7 +77,7 @@ async function onSession(s){
   await load();
 }
 // Diagnostic line (safe to show: it reveals only the project address and the start of the public key)
-try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v8`}
+try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v9`}
 catch(e){$("diag").textContent=`Check: the Supabase address is not a valid web address (${JSON.stringify(SUPABASE_URL)}) · app v4`}
 if(SUPABASE_URL.startsWith("YOUR_")){showLogin("Set SUPABASE_URL and SUPABASE_ANON_KEY at the top of index.html.");$("gin").hidden=true}
 else if(!window.supabase){showLogin("Could not load the Supabase library. Check your connection.");$("gin").hidden=true}
@@ -295,23 +295,28 @@ async function clearCover(b){
   covers=covers.filter(x=>x.book_id!=b.book_id);
 }
 function coverPicker(b){
-  const d=$("cvd"),st={works:[],key:null,offset:0,seen:new Set(),done:true,tok:0};
+  const d=$("cvd"),st={works:[],key:null,offset:0,seen:new Set(),done:true,tok:0,gbIndex:0};
   d.innerHTML=`<h2 style="margin-top:0">Choose cover</h2><p class="m">${esc(b.title)}</p>
   <div class="fm"><div class="g2"><label>Title<input id="cs_t" value="${esc(b.title)}"></label><label>Author<input id="cs_a" value="${esc(A(b.author_id).name)}"></label></div></div>
+  <div class="fm"><label>Source<select id="cs_src" style="width:100%"><option value="ol">Open Library</option><option value="gb">Google Books</option></select></label></div>
   <div class="tg"><button type="button" id="cs_go">Search</button></div>
-  <div class="fm"><label>Matching book<select id="cs_w" style="width:100%"></select></label></div>
-  <div class="fm"><label><input type="checkbox" id="cs_nl"> Also show editions with no language listed</label></div>
+  <div class="fm" id="cs_wrap"><label>Matching book<select id="cs_w" style="width:100%"></select></label></div>
+  <div class="fm" id="cs_nlw"><label><input type="checkbox" id="cs_nl"> Also show editions with no language listed</label></div>
   <div id="cs_msg" class="m" role="status"></div><div id="cs_g" class="cg"></div>
   <div class="tg"><button type="button" id="cs_more" hidden>Show more</button></div>
   <div class="fm"><label>Or paste an image address<input id="cs_u" placeholder="https://…"></label></div>
   <div class="tg"><button type="button" id="cs_use">Use this address</button><button type="button" id="cs_rm">Remove cover</button><button type="button" id="cs_x">Close</button></div>`;
   const say=t=>{$("cs_msg").textContent=t||""};
   const busy=on=>d.querySelectorAll("button").forEach(x=>x.disabled=on);
+  const tile=(id,large,thumb,source,cap)=>$("cs_g").insertAdjacentHTML("beforeend",`<button type="button" class="ci" data-large="${esc(large)}" data-thumb="${esc(thumb)}" data-source="${esc(source)}" title="${esc(cap)}"><img src="${esc(thumb)}" alt="Cover option" loading="lazy" referrerpolicy="no-referrer"><span>${esc(cap||"Edition")}</span></button>`);
+  const src=()=>$("cs_src").value;
+  function setMode(){const gb=src()==="gb";$("cs_wrap").hidden=gb;$("cs_nlw").hidden=gb}
   async function search(){
+    setMode();if(src()==="gb"){await gbSearch();return}
     const t=$("cs_t").value.trim(),a=$("cs_a").value.trim();if(!t){say("Enter a title.");return}
     const tok=++st.tok;say("Searching Open Library…");$("cs_g").innerHTML="";$("cs_more").hidden=true;$("cs_w").innerHTML="";
     try{
-      const q=new URLSearchParams({title:t,limit:"8",language:"eng",fields:"key,title,author_name,first_publish_year,edition_count"});if(a)q.set("author",a);
+      const q=new URLSearchParams({title:t,limit:"8",language:"eng",fields:"key,title,author_name,first_publish_year,edition_count,cover_i"});if(a)q.set("author",a);
       const j=await olJSON(`${OL}/search.json?${q}`);if(tok!==st.tok)return;
       st.works=(j.docs||[]).filter(w=>w.key);
       if(!st.works.length){say("No matching books found. Try a shorter title, or paste an image address below.");return}
@@ -321,9 +326,11 @@ function coverPicker(b){
   }
   async function loadWork(){
     const w=st.works[+$("cs_w").value];if(!w)return;
-    st.key=w.key;st.offset=0;st.seen=new Set();st.done=false;st.tok++;$("cs_g").innerHTML="";await more();
+    st.key=w.key;st.offset=0;st.seen=new Set();st.done=false;st.tok++;$("cs_g").innerHTML="";
+    if(w.cover_i>0){st.seen.add(w.cover_i);tile(w.cover_i,olImg(w.cover_i,"L"),olImg(w.cover_i,"M"),"Open Library cover "+w.cover_i,"Main cover for this book")}
+    await olMore();
   }
-  async function more(){
+  async function olMore(){
     const tok=st.tok,w=st.key;let added=0,pages=0;say("Loading covers…");$("cs_more").hidden=true;
     const isEng=e=>(e.languages||[]).some(l=>l&&l.key==="/languages/eng"),noLang=e=>!(e.languages&&e.languages.length);
     const okLang=e=>isEng(e)||($("cs_nl").checked&&noLang(e));
@@ -335,17 +342,42 @@ function coverPicker(b){
         for(const e of es.filter(okLang))for(const id of (e.covers||[])){
           if(!(id>0)||st.seen.has(id))continue;st.seen.add(id);added++;
           const cap=[e.publish_date,(e.publishers||[])[0]].filter(Boolean).join(" · ");
-          $("cs_g").insertAdjacentHTML("beforeend",`<button type="button" class="ci" data-cid="${id}" title="${esc(cap)}"><img src="${olImg(id,"M")}" alt="Cover option" loading="lazy" referrerpolicy="no-referrer"><span>${esc(cap||"Edition")}</span></button>`);
+          tile(id,olImg(id,"L"),olImg(id,"M"),"Open Library cover "+id,cap);
         }
       }
       say(st.seen.size?`${st.seen.size} English covers shown. Click one to use it.`:(st.done?"No English covers found for this book. Try another match above, tick the box above to include editions with no language listed, or paste an address below.":"No English covers on this page yet. Click Show more."));
       $("cs_more").hidden=st.done;
     }catch(e){if(tok===st.tok)say("Could not load editions ("+e.message+").")}
   }
+  async function gbSearch(){
+    const t=$("cs_t").value.trim();if(!t){say("Enter a title.");return}
+    st.tok++;st.seen=new Set();st.gbIndex=0;st.done=false;$("cs_g").innerHTML="";await gbMore();
+  }
+  async function gbMore(){
+    const tok=st.tok;say("Searching Google Books…");$("cs_more").hidden=true;
+    try{
+      const t=$("cs_t").value.trim(),a=$("cs_a").value.trim();
+      const q=`intitle:${t}`+(a?` inauthor:${a}`:"");
+      const j=await olJSON(`https://www.googleapis.com/books/v1/volumes?${new URLSearchParams({q,langRestrict:"en",printType:"books",maxResults:"20",startIndex:String(st.gbIndex)})}`);
+      if(tok!==st.tok)return;
+      const items=j.items||[];st.gbIndex+=items.length;if(items.length<20)st.done=true;
+      for(const it of items){
+        const v=it.volumeInfo||{};
+        if(!it.id||!v.imageLinks||(v.language&&v.language!=="en")||st.seen.has(it.id))continue;
+        st.seen.add(it.id);
+        const base=`https://books.google.com/books/content?id=${encodeURIComponent(it.id)}&printsec=frontcover&img=1&source=gbs_api`;
+        const cap=[(v.publishedDate||"").slice(0,4),v.publisher].filter(Boolean).join(" · ");
+        tile(it.id,base+"&zoom=2",base+"&zoom=1","Google Books "+it.id,cap||v.title||"Edition");
+      }
+      say(st.seen.size?`${st.seen.size} English covers shown. Click one to use it.`:"No English covers found on Google Books. Try Open Library, or paste an address below.");
+      $("cs_more").hidden=st.done;
+    }catch(e){if(tok===st.tok)say("Could not reach Google Books ("+e.message+").")}
+  }
+  const more=()=>src()==="gb"?gbMore():olMore();
   async function choose(c){busy(true);say("Saving…");try{await setCover(b,c);d.close();render()}catch(e){say("Could not save: "+e.message);busy(false)}}
-  $("cs_go").onclick=search;$("cs_w").onchange=loadWork;$("cs_nl").onchange=loadWork;$("cs_more").onclick=more;
+  $("cs_go").onclick=search;$("cs_w").onchange=loadWork;$("cs_nl").onchange=loadWork;$("cs_more").onclick=more;$("cs_src").onchange=search;
   $("cs_t").onkeydown=$("cs_a").onkeydown=e=>{if(e.key==="Enter")search()};
-  $("cs_g").onclick=e=>{const t=e.target.closest(".ci");if(!t)return;choose({image_url:olImg(t.dataset.cid,"L"),thumbnail_url:olImg(t.dataset.cid,"M"),alt_text:"Cover of "+b.title,source:"Open Library cover "+t.dataset.cid})};
+  $("cs_g").onclick=e=>{const t=e.target.closest(".ci");if(!t)return;choose({image_url:t.dataset.large,thumbnail_url:t.dataset.thumb,alt_text:"Cover of "+b.title,source:t.dataset.source})};
   $("cs_use").onclick=()=>{const u=$("cs_u").value.trim();if(!/^https:\/\/\S+$/i.test(u)){say("Enter an address starting with https://");return}choose({image_url:u,thumbnail_url:null,alt_text:"Cover of "+b.title,source:"Pasted address"})};
   $("cs_rm").onclick=async()=>{busy(true);try{await clearCover(b);d.close();render()}catch(e){say("Could not remove: "+e.message);busy(false)}};
   $("cs_x").onclick=()=>d.close();
