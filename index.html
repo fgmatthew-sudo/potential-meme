@@ -47,13 +47,14 @@ textarea{width:100%;min-height:70px}
 
 <div id="home">
 <div class="bar"><button id="ad">+ Add book</button><button id="imp">Import CSV</button><button id="ex">Export CSV</button></div>
-<h2 style="margin-top:6px">Genres</h2>
+<div class="gg" id="lists"></div>
+<h2 style="margin-top:14px">Genres</h2>
 <div class="cnt" id="hcnt"></div>
 <div class="gg" id="genres"></div>
 </div>
 
 <div id="listview" hidden>
-<div class="bar"><button id="back">← All genres</button><button id="ad2" data-act="ad">+ Add book</button></div>
+<div class="bar"><button id="back">← Home</button><button id="ad2" data-act="ad">+ Add book</button></div>
 <h2 id="ltitle" style="margin-top:6px"></h2>
 <div class="bar">
 <input type="search" id="q" placeholder="Search title, author, series, genre" aria-label="Search">
@@ -94,7 +95,7 @@ async function onSession(s){
   history.replaceState({v:"home",g:null},"");go(null,false);
 }
 // Diagnostic line (safe to show: it reveals only the project address and the start of the public key)
-try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v14`}
+try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v15`}
 catch(e){$("diag").textContent=`Check: the Supabase address is not a valid web address (${JSON.stringify(SUPABASE_URL)}) · app v4`}
 if(SUPABASE_URL.startsWith("YOUR_")){showLogin("Set SUPABASE_URL and SUPABASE_ANON_KEY at the top of index.html.");$("gin").hidden=true}
 else if(!window.supabase){showLogin("Could not load the Supabase library. Check your connection.");$("gin").hidden=true}
@@ -194,28 +195,33 @@ const sorts={reading_order:"Reading order",title:"Title",author:"Author",genre:"
 $("so").innerHTML=Object.entries(sorts).map(([k,v])=>`<option value="${k}">Sort: ${v}</option>`).join("");
 function key(b,k){switch(k){case"title":return b.title.toLowerCase();case"author":return A(b.author_id).sort_name;case"genre":return G(b.genre_id).name;case"series":return b.series_id?S(b.series_id).name:null;case"owned":case"read":return b[k]?0:1;default:return b[k]}}
 function cmp(k){return(a,b)=>{const x=key(a,k),y=key(b,k);if(x==null&&y==null)return 0;if(x==null)return 1;if(y==null)return -1;return x<y?-1:x>y?1:0}}
-function tog(b,f){const on=b[f],lab=f=="owned"?(on?"● Owned":"○ Not owned"):(on?"✓ Read":"○ Unread");return`<button aria-pressed="${on}" data-id="${esc(b.book_id)}" data-f="${f}">${lab}</button>`}
+function tog(b,f){const on=!!b[f],lab={owned:on?"● Owned":"○ Not owned",read:on?"✓ Read":"○ Unread",wishlist:on?"♥ On wishlist":"♡ Wishlist",tbr:on?"✓ In TBR":"+ TBR"}[f];return`<button aria-pressed="${on}" data-id="${esc(b.book_id)}" data-f="${f}">${lab}</button>`}
 function coverBox(b,big){
   const c=covers.find(x=>x.cover_id==b.cover_id),cls="cov"+(big?" big":"")+(c?" has":"");
   const inner=c?`<img class="cim" src="${esc(big?c.image_url:(c.thumbnail_url||c.image_url))}" alt="${esc(c.alt_text||"Cover of "+b.title)}" loading="lazy" referrerpolicy="no-referrer">`:"[Book Cover Unavailable]";
   return`<div class="${cls}" style="background:hsl(${hue(b.book_id)} 35% 38%)"${c?"":` role="img" aria-label="Cover of ${esc(b.title)} unavailable"`}>${inner}</div>`}
 function row(b){const s=b.series_id?esc(S(b.series_id).name):"Standalone";
-  return`<div class="row${b.owned?(b.read?" st-done":" st-own"):""}">${coverBox(b)}<div class="main"><button class="t" data-open="${esc(b.book_id)}">${esc(b.title)}</button><div class="m">${esc(A(b.author_id).name)} · ${esc(G(b.genre_id).name)}</div><div class="m">Series: ${s}${b.reading_order!=null?` · Read #${b.reading_order}`:""}</div><div class="tg">${tog(b,"owned")}${tog(b,"read")}</div></div></div>`}
+  return`<div class="row${b.owned?(b.read?" st-done":" st-own"):""}">${coverBox(b)}<div class="main"><button class="t" data-open="${esc(b.book_id)}">${esc(b.title)}</button><div class="m">${esc(A(b.author_id).name)} · ${esc(G(b.genre_id).name)}</div><div class="m">Series: ${s}${b.reading_order!=null?` · Read #${b.reading_order}`:""}</div><div class="tg">${tog(b,"owned")}${tog(b,"read")}${tog(b,"wishlist")}${tog(b,"tbr")}</div></div></div>`}
 function renderHome(){
   const by={};books.forEach(b=>{const x=(by[b.genre_id]??={n:0,r:0});x.n++;if(b.read)x.r++});
   const gl=genres.filter(g=>by[g.genre_id]).sort((x,y)=>x.name.localeCompare(y.name));
   const tile=(id,name,n,r,h)=>`<button class="gt" data-genre="${esc(id)}" style="border-left-color:hsl(${h} 45% 45%)"><span class="gn">${esc(name)}</span><span class="m">${n} book${n==1?"":"s"} · ${r} read</span></button>`;
+  const sp=(id,name,n,h)=>`<button class="gt" data-genre="${id}" style="border-left-color:hsl(${h} 45% 45%)"><span class="gn">${name}</span><span class="m">${n} book${n==1?"":"s"}</span></button>`;
+  $("lists").innerHTML=sp("__wishlist","Wishlist",books.filter(b=>b.wishlist).length,340)+sp("__tbr","TBR",books.filter(b=>b.tbr).length,200);
   $("hcnt").textContent=books.length?`${books.length} book${books.length==1?"":"s"} in ${gl.length} genre${gl.length==1?"":"s"}`:"";
   $("genres").innerHTML=books.length
     ?tile("","All books",books.length,books.filter(b=>b.read).length,30)+gl.map(g=>tile(g.genre_id,g.name,by[g.genre_id].n,by[g.genre_id].r,hue(g.genre_id))).join("")
     :'<p class="m">No books yet. Use “+ Add book” or “Import CSV” to get started.</p>';
 }
 function render(){renderHome();renderList()}
+let special=null;
 function go(g,push,fresh){
   const home=g===null;
+  if(home)special=null;
   if(!home){
     if(fresh)["q","fa","fs","fo","fr"].forEach(i=>$(i).value="");
-    $("fg").value=g;if($("fg").value!==g)$("fg").value="";
+    special=g=="__wishlist"||g=="__tbr"?g.slice(2):null;
+    $("fg").value=special?"":g;if(!special&&$("fg").value!==g)$("fg").value="";
   }
   $("home").hidden=!home;$("listview").hidden=home;
   if(push)history.pushState({v:home?"home":"list",g},"");
@@ -223,9 +229,10 @@ function go(g,push,fresh){
 }
 window.addEventListener("popstate",e=>{const s=e.state;go(s&&s.v==="list"?s.g:null,false)});
 function renderList(){
-  $("ltitle").textContent=$("fg").value?G($("fg").value).name:"All books";
+  $("ltitle").textContent=special=="wishlist"?"Wishlist":special=="tbr"?"To be read (TBR)":$("fg").value?G($("fg").value).name:"All books";
   const q=$("q").value.toLowerCase(),g=$("fg").value,a=$("fa").value,s=$("fs").value,o=$("fo").value,r=$("fr").value,k=$("so").value;
   const l=books.filter(b=>{
+    if(special&&!b[special])return false;
     if(g&&b.genre_id!=g||a&&b.author_id!=a)return false;
     if(s=="__s"?b.series_id:s&&b.series_id!=s)return false;
     if(o&&b.owned!=(o=="1")||r&&b.read!=(r=="1"))return false;
@@ -243,7 +250,7 @@ function renderList(){
 /* ---------- detail ---------- */
 function detail(id){
   const b=books.find(x=>x.book_id==id);if(!b)return;const d=$("dlg"),v=x=>x==null?"—":esc(x);
-  d.innerHTML=`${coverBox(b,true)}<h2 style="margin-top:0">${esc(b.title)}</h2><div class="m">${esc(A(b.author_id).name)}</div><dl><dt>Genre</dt><dd>${esc(G(b.genre_id).name)}</dd><dt>Series</dt><dd>${b.series_id?esc(S(b.series_id).name):"Standalone"}</dd><dt>Series / reading order</dt><dd>${v(b.reading_order)}</dd><dt>Publication order</dt><dd>${v(b.publication_order)}</dd><dt>Published</dt><dd>${v(b.publication_year)}</dd></dl><p>${b.description?esc(b.description):'<span class="m">No description.</span>'}</p><div class="tg">${tog(b,"owned")}${tog(b,"read")}</div><p><label class="m" for="nt">My notes</label><textarea id="nt">${esc(b.notes)}</textarea></p><div class="tg"><button id="ed">Edit</button><button id="cv">Choose cover</button><button id="dl">Delete</button><button id="cl">Close</button></div>`;
+  d.innerHTML=`${coverBox(b,true)}<h2 style="margin-top:0">${esc(b.title)}</h2><div class="m">${esc(A(b.author_id).name)}</div><dl><dt>Genre</dt><dd>${esc(G(b.genre_id).name)}</dd><dt>Series</dt><dd>${b.series_id?esc(S(b.series_id).name):"Standalone"}</dd><dt>Series / reading order</dt><dd>${v(b.reading_order)}</dd><dt>Publication order</dt><dd>${v(b.publication_order)}</dd><dt>Published</dt><dd>${v(b.publication_year)}</dd></dl><p>${b.description?esc(b.description):'<span class="m">No description.</span>'}</p><div class="tg">${tog(b,"owned")}${tog(b,"read")}${tog(b,"wishlist")}${tog(b,"tbr")}</div><p><label class="m" for="nt">My notes</label><textarea id="nt">${esc(b.notes)}</textarea></p><div class="tg"><button id="ed">Edit</button><button id="cv">Choose cover</button><button id="dl">Delete</button><button id="cl">Close</button></div>`;
   d.showModal();
   let tm;$("nt").oninput=e=>{clearTimeout(tm);const val=e.target.value||null;tm=setTimeout(()=>upd(b,{notes:val}),700)};
   $("nt").onchange=e=>{clearTimeout(tm);upd(b,{notes:e.target.value||null})};
@@ -331,8 +338,8 @@ function imp(){
 }
 function exp(){
   const q=v=>{v=v==null?"":String(v);return/[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
-  const H=["book_id","title","subtitle","author","genre","series","reading_order","publication_order","publication_year","owned","read","notes","description"];
-  const rows=books.map(b=>[b.book_id,b.title,b.subtitle,A(b.author_id).name,G(b.genre_id).name,b.series_id?S(b.series_id).name:"",b.reading_order,b.publication_order,b.publication_year,b.owned,b.read,b.notes,b.description].map(q).join(","));
+  const H=["book_id","title","subtitle","author","genre","series","reading_order","publication_order","publication_year","owned","read","wishlist","tbr","notes","description"];
+  const rows=books.map(b=>[b.book_id,b.title,b.subtitle,A(b.author_id).name,G(b.genre_id).name,b.series_id?S(b.series_id).name:"",b.reading_order,b.publication_order,b.publication_year,b.owned,b.read,!!b.wishlist,!!b.tbr,b.notes,b.description].map(q).join(","));
   const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["﻿"+[H.join(","),...rows].join("\r\n")],{type:"text/csv"}));
   a.download="reading-list.csv";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 }
