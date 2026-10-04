@@ -52,7 +52,7 @@ textarea{width:100%;min-height:70px}
 <script>
 // ====== CONFIG: paste your values from Supabase (Project Settings -> API) ======
 const SUPABASE_URL = "https://xagqvrmlwqbwlmlljomk.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhZ3F2cm1sd3Fid2xtbGxqb21rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEwNDgzMDEsImV4cCI6MjEwNjYyNDMwMX0.OPnm-d9fripByy6XSJk5YP-5zQocfJJsoxwoi4_8kN4";   // anon/publishable key only. NEVER the service_role key.
+const SUPABASE_ANON_KEY = "sb_publishable_nu06QaBn3cq3PVMvxAp8hw_aBQMnC_N";   // anon/publishable key only. NEVER the service_role key.
 // ===============================================================================
 
 const $=id=>document.getElementById(id);
@@ -72,8 +72,8 @@ async function onSession(s){
   await load();
 }
 // Diagnostic line (safe to show: it reveals only the project address and the start of the public key)
-try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v3`}
-catch(e){$("diag").textContent=`Check: the Supabase address is not a valid web address (${JSON.stringify(SUPABASE_URL)}) · app v3`}
+try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v4`}
+catch(e){$("diag").textContent=`Check: the Supabase address is not a valid web address (${JSON.stringify(SUPABASE_URL)}) · app v4`}
 if(SUPABASE_URL.startsWith("YOUR_")){showLogin("Set SUPABASE_URL and SUPABASE_ANON_KEY at the top of index.html.");$("gin").hidden=true}
 else if(!window.supabase){showLogin("Could not load the Supabase library. Check your connection.");$("gin").hidden=true}
 else{
@@ -218,22 +218,39 @@ function form(b){
 /* ---------- CSV import / export ---------- */
 function parseCSV(t){const rows=[];let r=[],f="",q=false;for(let i=0;i<t.length;i++){const c=t[i];if(q){if(c=='"'){if(t[i+1]=='"'){f+='"';i++}else q=false}else f+=c}else if(c=='"')q=true;else if(c==','){r.push(f);f=""}else if(c=='\n'||c=='\r'){if(c=='\r'&&t[i+1]=='\n')i++;r.push(f);rows.push(r);r=[];f=""}else f+=c}
   if(f||r.length){r.push(f);rows.push(r)}return rows.filter(r=>r.some(x=>x.trim()))}
+const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function toForm(b){return{title:b.title,subtitle:b.subtitle,author:A(b.author_id).name,genre:G(b.genre_id).name,series:b.series_id?S(b.series_id).name:"",
+  series_order:b.series_order,reading_order:b.reading_order,publication_order:b.publication_order,publication_date:b.publication_date,
+  isbn_13:b.isbn_13,description:b.description,notes:b.notes,owned:b.owned,read:b.read}}
+function norm(d){const i=nz(d.isbn_13),n=v=>{v=num(v);return v==null?null:v};
+  return JSON.stringify([String(d.title).trim(),nz(d.subtitle),String(d.author).trim().toLowerCase(),String(d.genre).trim().toLowerCase(),(nz(d.series)||"").toLowerCase(),
+    n(d.series_order),n(d.reading_order),n(d.publication_order),nz(d.publication_date),i?i.replace(/-/g,""):null,nz(d.description),nz(d.notes),!!d.owned,!!d.read])}
 async function doImport(t,out){
   const rows=parseCSV(t.replace(/^﻿/,""));if(rows.length<2)return"No data rows found.";
   const h=rows[0].map(x=>x.trim().toLowerCase()),miss=["title","author","genre"].filter(c=>!h.includes(c));
   if(miss.length)return"Missing required column(s): "+miss.join(", ");
-  let ok=0,dup=0;const err=[];
+  let added=0,updated=0,same=0;const err=[];
   for(let i=1;i<rows.length;i++){
-    const r=rows[i],d={};h.forEach((c,j)=>d[c]=r[j]);d.owned=bl(d.owned);d.read=bl(d.read);
+    const r=rows[i],raw={};h.forEach((c,j)=>{if(c)raw[c]=r[j]});
+    raw.owned=h.includes("owned")?bl(raw.owned):undefined;raw.read=h.includes("read")?bl(raw.read):undefined;
+    // find the existing book: by book_id first, then by title + author
+    let ex=null;const bid=nz(raw.book_id);
+    if(bid&&UUID.test(bid))ex=books.find(b=>b.book_id==bid.toLowerCase())||null;
+    if(!ex&&nz(raw.title)&&nz(raw.author))ex=books.find(b=>b.title.toLowerCase()==raw.title.trim().toLowerCase()&&A(b.author_id).name.toLowerCase()==raw.author.trim().toLowerCase())||null;
+    // columns missing from the CSV keep their current value; columns present (even blank) overwrite
+    const d=ex?toForm(ex):{owned:false,read:false};
+    for(const k in raw){if(k=="book_id"||raw[k]===undefined)continue;d[k]=raw[k]}
+    if(!ex){if(d.owned===undefined)d.owned=false;if(d.read===undefined)d.read=false}
     const e=val(d);if(e.length){err.push(`Row ${i+1}: ${e.join("; ")}`);continue}
-    if(books.some(b=>b.title.toLowerCase()==d.title.trim().toLowerCase()&&A(b.author_id).name.toLowerCase()==d.author.trim().toLowerCase())){dup++;continue}
+    if(ex&&norm(d)==norm(toForm(ex))){same++;continue}
     out.textContent=`Importing ${i} of ${rows.length-1}…`;
-    try{await put(d);ok++}catch(x){err.push(`Row ${i+1}: ${x.message}`)}
+    try{await put(d,ex||undefined);ex?updated++:added++}catch(x){err.push(`Row ${i+1}: ${x.message}`)}
   }
-  return`<strong>${ok} imported</strong>, ${dup} duplicate(s) skipped, ${err.length} invalid.`+(err.length?"<ul>"+err.slice(0,10).map(x=>`<li>${esc(x)}</li>`).join("")+(err.length>10?`<li>…and ${err.length-10} more</li>`:"")+"</ul>":"");
+  await prune();
+  return`<strong>${added} added</strong>, ${updated} updated, ${same} unchanged, ${err.length} invalid.`+(err.length?"<ul>"+err.slice(0,10).map(x=>`<li>${esc(x)}</li>`).join("")+(err.length>10?`<li>…and ${err.length-10} more</li>`:"")+"</ul>":"");
 }
 function imp(){
-  const d=$("im");d.innerHTML=`<h2 style="margin-top:0">Import CSV</h2><p class="m">Required columns: title, author, genre. Optional: subtitle, series, series_order, reading_order, publication_order, publication_date, isbn_13, owned, read, notes, description. Invalid rows and duplicates (same title + author) are skipped.</p><input type="file" id="fi" accept=".csv,text/csv"><div id="ir" class="m" role="status"></div><p><button type="button" id="ic">Close</button></p>`;
+  const d=$("im");d.innerHTML=`<h2 style="margin-top:0">Import CSV</h2><p class="m">Required columns: title, author, genre. Optional: subtitle, series, series_order, reading_order, publication_order, publication_date, isbn_13, owned, read, notes, description, book_id. A book that already exists (matched by book_id, or by title + author) is <strong>updated</strong> with the values in the file; a column that is missing from the file leaves that field as it is, while a blank cell clears it. New books are added. Nothing is ever deleted by an import.</p><input type="file" id="fi" accept=".csv,text/csv"><div id="ir" class="m" role="status"></div><p><button type="button" id="ic">Close</button></p>`;
   d.showModal();$("ic").onclick=()=>d.close();
   $("fi").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();
     r.onload=async()=>{const out=$("ir");out.innerHTML=await doImport(String(r.result),out);fill();render()};r.readAsText(f)};
