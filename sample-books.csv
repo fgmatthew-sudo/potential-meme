@@ -1,8 +1,0 @@
-title,author,genre,series,series_order,reading_order,publication_order,publication_date,isbn_13,owned,read
-The Fellowship of the Ring,J.R.R. Tolkien,Fantasy,The Lord of the Rings,1,1,1,1954-07-29,9780261103573,true,false
-The Two Towers,J.R.R. Tolkien,Fantasy,The Lord of the Rings,2,2,2,1954-11-11,,true,false
-The Return of the King,J.R.R. Tolkien,Fantasy,The Lord of the Rings,3,3,3,1955-10-20,,false,false
-The Hobbit,J.R.R. Tolkien,Fantasy,,,,,1937-09-21,9780261102217,true,true
-The Magician's Nephew,C.S. Lewis,Fantasy,The Chronicles of Narnia,1,1,6,1955-05-02,,false,false
-"The Lion, the Witch and the Wardrobe",C.S. Lewis,Fantasy,The Chronicles of Narnia,2,2,1,1950-10-16,,true,true
-The Horse and His Boy,C.S. Lewis,Fantasy,The Chronicles of Narnia,3,3,5,1954-09-06,,false,false
