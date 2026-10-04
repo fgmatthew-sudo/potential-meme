@@ -93,7 +93,7 @@ async function onSession(s){
   history.replaceState({v:"home",g:null},"");go(null,false);
 }
 // Diagnostic line (safe to show: it reveals only the project address and the start of the public key)
-try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v11`}
+try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v12`}
 catch(e){$("diag").textContent=`Check: the Supabase address is not a valid web address (${JSON.stringify(SUPABASE_URL)}) · app v4`}
 if(SUPABASE_URL.startsWith("YOUR_")){showLogin("Set SUPABASE_URL and SUPABASE_ANON_KEY at the top of index.html.");$("gin").hidden=true}
 else if(!window.supabase){showLogin("Could not load the Supabase library. Check your connection.");$("gin").hidden=true}
@@ -299,7 +299,14 @@ async function doImport(t,out){
     // find the existing book: by book_id first, then by title + author
     let ex=null;const bid=nz(raw.book_id);
     if(bid&&UUID.test(bid))ex=books.find(b=>b.book_id==bid.toLowerCase())||null;
-    if(!ex&&nz(raw.title)&&nz(raw.author))ex=books.find(b=>b.title.toLowerCase()==raw.title.trim().toLowerCase()&&A(b.author_id).name.toLowerCase()==raw.author.trim().toLowerCase())||null;
+    if(!ex&&nz(raw.title)&&nz(raw.author)){
+      // a book is "the same" only if title, author AND series all match, so "Volume 1" of two series stays two books
+      const T=raw.title.trim().toLowerCase(),Au=raw.author.trim().toLowerCase();
+      let c=books.filter(b=>b.title.toLowerCase()==T&&A(b.author_id).name.toLowerCase()==Au);
+      if(h.includes("series")){const sn=(nz(raw.series)||"").toLowerCase();c=c.filter(b=>(b.series_id?S(b.series_id).name.toLowerCase():"")==sn)}
+      else if(c.length>1){err.push(`Row ${i+1}: "${raw.title.trim()}" exists in more than one series. Add a series column (or book_id) so I know which one.`);continue}
+      ex=c[0]||null;
+    }
     // columns missing from the CSV keep their current value; columns present (even blank) overwrite
     const d=ex?toForm(ex):{owned:false,read:false};
     for(const k in raw){if(k=="book_id"||raw[k]===undefined)continue;d[k]=raw[k]}
@@ -313,7 +320,7 @@ async function doImport(t,out){
   return`<strong>${added} added</strong>, ${updated} updated, ${same} unchanged, ${err.length} invalid.`+(err.length?"<ul>"+err.slice(0,10).map(x=>`<li>${esc(x)}</li>`).join("")+(err.length>10?`<li>…and ${err.length-10} more</li>`:"")+"</ul>":"");
 }
 function imp(){
-  const d=$("im");d.innerHTML=`<h2 style="margin-top:0">Import CSV</h2><p class="m">Required columns: title, author, genre. Optional: subtitle, series, reading_order (also used as the series order), publication_order, publication_year, owned, read, notes, description, book_id. A book that already exists (matched by book_id, or by title + author) is <strong>updated</strong> with the values in the file; a column that is missing from the file leaves that field as it is, while a blank cell clears it. New books are added. Nothing is ever deleted by an import. Dates: give the year only (for example 1954). A column named publication_date is also accepted, and only its year is used. Older files with series_order or isbn_13 columns still import: series_order is used as the reading order if there is no reading_order column, and isbn_13 is ignored.</p><input type="file" id="fi" accept=".csv,text/csv"><div id="ir" class="m" role="status"></div><p><button type="button" id="ic">Close</button></p>`;
+  const d=$("im");d.innerHTML=`<h2 style="margin-top:0">Import CSV</h2><p class="m">Required columns: title, author, genre. Optional: subtitle, series, reading_order (also used as the series order), publication_order, publication_year, owned, read, notes, description, book_id. A book that already exists (matched by book_id, or by title + author + series) is <strong>updated</strong> with the values in the file; a column that is missing from the file leaves that field as it is, while a blank cell clears it. New books are added. Nothing is ever deleted by an import. Dates: give the year only (for example 1954). A column named publication_date is also accepted, and only its year is used. Older files with series_order or isbn_13 columns still import: series_order is used as the reading order if there is no reading_order column, and isbn_13 is ignored.</p><input type="file" id="fi" accept=".csv,text/csv"><div id="ir" class="m" role="status"></div><p><button type="button" id="ic">Close</button></p>`;
   d.showModal();$("ic").onclick=()=>d.close();
   $("fi").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();
     r.onload=async()=>{const out=$("ir");out.innerHTML=await doImport(String(r.result),out);fill();render()};r.readAsText(f)};
