@@ -93,7 +93,7 @@ async function onSession(s){
   history.replaceState({v:"home",g:null},"");go(null,false);
 }
 // Diagnostic line (safe to show: it reveals only the project address and the start of the public key)
-try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v10`}
+try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v11`}
 catch(e){$("diag").textContent=`Check: the Supabase address is not a valid web address (${JSON.stringify(SUPABASE_URL)}) · app v4`}
 if(SUPABASE_URL.startsWith("YOUR_")){showLogin("Set SUPABASE_URL and SUPABASE_ANON_KEY at the top of index.html.");$("gin").hidden=true}
 else if(!window.supabase){showLogin("Could not load the Supabase library. Check your connection.");$("gin").hidden=true}
@@ -117,9 +117,21 @@ $("gin").onclick=async()=>{
 $("out").onclick=()=>sb.auth.signOut();
 
 /* ---------- data ---------- */
+// Supabase returns at most 1000 rows per request, so read each table in pages of 1000 until it runs out.
+async function fetchAll(t,key){
+  const out=[];
+  for(let from=0;;from+=1000){
+    const {data,error}=await sb.from(t).select("*").order(key).range(from,from+999);
+    if(error)return{error};
+    out.push(...data);
+    if(data.length<1000)break;
+  }
+  return{data:out};
+}
 async function load(){
   msg("Loading…");
-  const r=await Promise.all(["authors","genres","series","books","book_covers"].map(t=>sb.from(t).select("*")));
+  const keys={authors:"author_id",genres:"genre_id",series:"series_id",books:"book_id",book_covers:"cover_id"};
+  const r=await Promise.all(Object.keys(keys).map(t=>fetchAll(t,keys[t])));
   const e=r.find(x=>x.error);if(e){msg("Load failed: "+e.error.message);return}
   [authors,genres,series,books,covers]=r.map(x=>x.data);msg("");fill();render();
 }
