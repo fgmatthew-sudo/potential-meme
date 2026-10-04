@@ -72,7 +72,7 @@ async function onSession(s){
   await load();
 }
 // Diagnostic line (safe to show: it reveals only the project address and the start of the public key)
-try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v4`}
+try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v5`}
 catch(e){$("diag").textContent=`Check: the Supabase address is not a valid web address (${JSON.stringify(SUPABASE_URL)}) · app v4`}
 if(SUPABASE_URL.startsWith("YOUR_")){showLogin("Set SUPABASE_URL and SUPABASE_ANON_KEY at the top of index.html.");$("gin").hidden=true}
 else if(!window.supabase){showLogin("Could not load the Supabase library. Check your connection.");$("gin").hidden=true}
@@ -120,7 +120,7 @@ async function put(d,old){
   const isb=nz(d.isbn_13);
   const f={title:d.title.trim(),subtitle:nz(d.subtitle),author_id:au.author_id,series_id:se?se.series_id:null,genre_id:ge.genre_id,
     series_order:num(d.series_order),reading_order:num(d.reading_order),publication_order:num(d.publication_order),
-    publication_date:nz(d.publication_date),isbn_13:isb?isb.replace(/-/g,""):null,description:nz(d.description),
+    publication_year:nz(d.publication_year)?Number(nz(d.publication_year)):null,isbn_13:isb?isb.replace(/-/g,""):null,description:nz(d.description),
     owned:d.owned,read:d.read,notes:"notes" in d?nz(d.notes):old?old.notes:null};
   if(old){const {data,error}=await sb.from("books").update(f).eq("book_id",old.book_id).select().single();if(error)throw error;Object.assign(old,data);return old}
   const sl=slug([ge.name,au.name.split(" ").pop(),sn||"",f.title].filter(Boolean).join(" "));
@@ -146,7 +146,7 @@ const bl=v=>{const s=String(v??"").trim().toLowerCase();if(!s)return false;if(["
 const nz=v=>{v=v==null?"":String(v).trim();return v===""?null:v};
 function val(d){const e=[];if(!nz(d.title))e.push("title is required");if(!nz(d.author))e.push("author is required");if(!nz(d.genre))e.push("genre is required");
   for(const k of["series_order","reading_order","publication_order"])if(isNaN(num(d[k])))e.push(k+" must be numeric");
-  if(nz(d.publication_date)&&!/^\d{4}-\d{2}-\d{2}$/.test(nz(d.publication_date)))e.push("publication_date must be YYYY-MM-DD");
+  if(nz(d.publication_year)&&!/^\d{4}$/.test(nz(d.publication_year)))e.push("publication_year must be a 4-digit year, e.g. 1954");
   const i=nz(d.isbn_13);if(i&&!/^\d{13}$/.test(i.replace(/-/g,"")))e.push("isbn_13 must be 13 digits");
   if(d.owned===undefined)e.push("owned must be true/false");if(d.read===undefined)e.push("read must be true/false");return e}
 function hue(s){let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))%360;return h}
@@ -158,7 +158,7 @@ function fill(){
   const sv=$("fs").value;$("fs").innerHTML='<option value="">Series: any</option><option value="__s">Standalone only</option>'+series.map(s=>`<option value="${esc(s.series_id)}">${esc(s.name)}</option>`).join("");$("fs").value=sv;
   for(const[id,l]of[["dl_a",authors],["dl_g",genres],["dl_s",series]])$(id).innerHTML=l.map(x=>`<option value="${esc(x.name)}">`).join("");
 }
-const sorts={reading_order:"Reading order",title:"Title",author:"Author",genre:"Genre",series:"Series",series_order:"Series order",publication_date:"Publication date",owned:"Owned",read:"Read"};
+const sorts={reading_order:"Reading order",title:"Title",author:"Author",genre:"Genre",series:"Series",series_order:"Series order",publication_year:"Publication year",owned:"Owned",read:"Read"};
 $("so").innerHTML=Object.entries(sorts).map(([k,v])=>`<option value="${k}">Sort: ${v}</option>`).join("");
 function key(b,k){switch(k){case"title":return b.title.toLowerCase();case"author":return A(b.author_id).sort_name;case"genre":return G(b.genre_id).name;case"series":return b.series_id?S(b.series_id).name:null;case"owned":case"read":return b[k]?0:1;default:return b[k]}}
 function cmp(k){return(a,b)=>{const x=key(a,k),y=key(b,k);if(x==null&&y==null)return 0;if(x==null)return 1;if(y==null)return -1;return x<y?-1:x>y?1:0}}
@@ -185,7 +185,7 @@ function render(){
 /* ---------- detail ---------- */
 function detail(id){
   const b=books.find(x=>x.book_id==id);if(!b)return;const d=$("dlg"),v=x=>x==null?"—":esc(x);
-  d.innerHTML=`<h2 style="margin-top:0">${esc(b.title)}</h2><div class="m">${esc(A(b.author_id).name)}</div><dl><dt>Genre</dt><dd>${esc(G(b.genre_id).name)}</dd><dt>Series</dt><dd>${b.series_id?esc(S(b.series_id).name):"Standalone"}</dd><dt>Series order</dt><dd>${v(b.series_order)}</dd><dt>Reading order</dt><dd>${v(b.reading_order)}</dd><dt>Publication order</dt><dd>${v(b.publication_order)}</dd><dt>Published</dt><dd>${v(b.publication_date)}</dd><dt>ISBN-13</dt><dd>${v(b.isbn_13)}</dd></dl><p>${b.description?esc(b.description):'<span class="m">No description.</span>'}</p><div class="tg">${tog(b,"owned")}${tog(b,"read")}</div><p><label class="m" for="nt">My notes</label><textarea id="nt">${esc(b.notes)}</textarea></p><div class="tg"><button id="ed">Edit</button><button id="dl">Delete</button><button id="cl">Close</button></div>`;
+  d.innerHTML=`<h2 style="margin-top:0">${esc(b.title)}</h2><div class="m">${esc(A(b.author_id).name)}</div><dl><dt>Genre</dt><dd>${esc(G(b.genre_id).name)}</dd><dt>Series</dt><dd>${b.series_id?esc(S(b.series_id).name):"Standalone"}</dd><dt>Series order</dt><dd>${v(b.series_order)}</dd><dt>Reading order</dt><dd>${v(b.reading_order)}</dd><dt>Publication order</dt><dd>${v(b.publication_order)}</dd><dt>Published</dt><dd>${v(b.publication_year)}</dd><dt>ISBN-13</dt><dd>${v(b.isbn_13)}</dd></dl><p>${b.description?esc(b.description):'<span class="m">No description.</span>'}</p><div class="tg">${tog(b,"owned")}${tog(b,"read")}</div><p><label class="m" for="nt">My notes</label><textarea id="nt">${esc(b.notes)}</textarea></p><div class="tg"><button id="ed">Edit</button><button id="dl">Delete</button><button id="cl">Close</button></div>`;
   d.showModal();
   let tm;$("nt").oninput=e=>{clearTimeout(tm);const val=e.target.value||null;tm=setTimeout(()=>upd(b,{notes:val}),700)};
   $("nt").onchange=e=>{clearTimeout(tm);upd(b,{notes:e.target.value||null})};
@@ -203,10 +203,10 @@ function detail(id){
 function form(b){
   const d=$("fd"),o=b?{...b,author:A(b.author_id).name,genre:G(b.genre_id).name,series:b.series_id?S(b.series_id).name:""}:{owned:false,read:false};
   const I=(k,l,ex="")=>`<label>${l}<input id="f_${k}" value="${esc(o[k])}" ${ex}></label>`;
-  d.innerHTML=`<h2 style="margin-top:0">${b?"Edit":"Add"} book</h2><div class="fm">${I("title","Title *")}${I("subtitle","Subtitle")}${I("author","Author *",'list="dl_a"')}${I("genre","Genre *",'list="dl_g"')}${I("series","Series (blank = standalone)",'list="dl_s"')}<div class="g2">${I("series_order","Series order",'inputmode="decimal"')}${I("reading_order","Reading order",'inputmode="decimal"')}${I("publication_order","Publication order",'inputmode="decimal"')}${I("publication_date","Published (YYYY-MM-DD)")}</div>${I("isbn_13","ISBN-13")}<label>Description<textarea id="f_description">${esc(o.description)}</textarea></label><label><input type="checkbox" id="f_owned" ${o.owned?"checked":""}> Owned</label><label><input type="checkbox" id="f_read" ${o.read?"checked":""}> Read</label></div><p id="fe" class="m err" role="alert"></p><div class="tg"><button type="button" id="fsv">Save</button><button type="button" id="fc">Cancel</button></div>`;
+  d.innerHTML=`<h2 style="margin-top:0">${b?"Edit":"Add"} book</h2><div class="fm">${I("title","Title *")}${I("subtitle","Subtitle")}${I("author","Author *",'list="dl_a"')}${I("genre","Genre *",'list="dl_g"')}${I("series","Series (blank = standalone)",'list="dl_s"')}<div class="g2">${I("series_order","Series order",'inputmode="decimal"')}${I("reading_order","Reading order",'inputmode="decimal"')}${I("publication_order","Publication order",'inputmode="decimal"')}${I("publication_year","Published (year only, e.g. 1954)",'inputmode="numeric" maxlength="4"')}</div>${I("isbn_13","ISBN-13")}<label>Description<textarea id="f_description">${esc(o.description)}</textarea></label><label><input type="checkbox" id="f_owned" ${o.owned?"checked":""}> Owned</label><label><input type="checkbox" id="f_read" ${o.read?"checked":""}> Read</label></div><p id="fe" class="m err" role="alert"></p><div class="tg"><button type="button" id="fsv">Save</button><button type="button" id="fc">Cancel</button></div>`;
   d.showModal();$("fc").onclick=()=>d.close();
   $("fsv").onclick=async()=>{
-    const q={};["title","subtitle","author","genre","series","series_order","reading_order","publication_order","publication_date","isbn_13","description"].forEach(k=>q[k]=$("f_"+k).value);
+    const q={};["title","subtitle","author","genre","series","series_order","reading_order","publication_order","publication_year","isbn_13","description"].forEach(k=>q[k]=$("f_"+k).value);
     q.owned=$("f_owned").checked;q.read=$("f_read").checked;
     const e=val(q);if(e.length){$("fe").textContent=e.join("; ");return}
     $("fsv").disabled=true;
@@ -220,11 +220,11 @@ function parseCSV(t){const rows=[];let r=[],f="",q=false;for(let i=0;i<t.length;
   if(f||r.length){r.push(f);rows.push(r)}return rows.filter(r=>r.some(x=>x.trim()))}
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function toForm(b){return{title:b.title,subtitle:b.subtitle,author:A(b.author_id).name,genre:G(b.genre_id).name,series:b.series_id?S(b.series_id).name:"",
-  series_order:b.series_order,reading_order:b.reading_order,publication_order:b.publication_order,publication_date:b.publication_date,
+  series_order:b.series_order,reading_order:b.reading_order,publication_order:b.publication_order,publication_year:b.publication_year,
   isbn_13:b.isbn_13,description:b.description,notes:b.notes,owned:b.owned,read:b.read}}
 function norm(d){const i=nz(d.isbn_13),n=v=>{v=num(v);return v==null?null:v};
   return JSON.stringify([String(d.title).trim(),nz(d.subtitle),String(d.author).trim().toLowerCase(),String(d.genre).trim().toLowerCase(),(nz(d.series)||"").toLowerCase(),
-    n(d.series_order),n(d.reading_order),n(d.publication_order),nz(d.publication_date),i?i.replace(/-/g,""):null,nz(d.description),nz(d.notes),!!d.owned,!!d.read])}
+    n(d.series_order),n(d.reading_order),n(d.publication_order),nz(d.publication_year),i?i.replace(/-/g,""):null,nz(d.description),nz(d.notes),!!d.owned,!!d.read])}
 async function doImport(t,out){
   const rows=parseCSV(t.replace(/^﻿/,""));if(rows.length<2)return"No data rows found.";
   const h=rows[0].map(x=>x.trim().toLowerCase()),miss=["title","author","genre"].filter(c=>!h.includes(c));
@@ -232,6 +232,8 @@ async function doImport(t,out){
   let added=0,updated=0,same=0;const err=[];
   for(let i=1;i<rows.length;i++){
     const r=rows[i],raw={};h.forEach((c,j)=>{if(c)raw[c]=r[j]});
+    // legacy column name: accept publication_date but keep only the year
+    if("publication_date" in raw){if(!("publication_year" in raw)){const m=String(raw.publication_date??"").match(/\b(\d{4})\b/);raw.publication_year=m?m[1]:(nz(raw.publication_date)?raw.publication_date:"")}delete raw.publication_date}
     raw.owned=h.includes("owned")?bl(raw.owned):undefined;raw.read=h.includes("read")?bl(raw.read):undefined;
     // find the existing book: by book_id first, then by title + author
     let ex=null;const bid=nz(raw.book_id);
@@ -250,15 +252,15 @@ async function doImport(t,out){
   return`<strong>${added} added</strong>, ${updated} updated, ${same} unchanged, ${err.length} invalid.`+(err.length?"<ul>"+err.slice(0,10).map(x=>`<li>${esc(x)}</li>`).join("")+(err.length>10?`<li>…and ${err.length-10} more</li>`:"")+"</ul>":"");
 }
 function imp(){
-  const d=$("im");d.innerHTML=`<h2 style="margin-top:0">Import CSV</h2><p class="m">Required columns: title, author, genre. Optional: subtitle, series, series_order, reading_order, publication_order, publication_date, isbn_13, owned, read, notes, description, book_id. A book that already exists (matched by book_id, or by title + author) is <strong>updated</strong> with the values in the file; a column that is missing from the file leaves that field as it is, while a blank cell clears it. New books are added. Nothing is ever deleted by an import.</p><input type="file" id="fi" accept=".csv,text/csv"><div id="ir" class="m" role="status"></div><p><button type="button" id="ic">Close</button></p>`;
+  const d=$("im");d.innerHTML=`<h2 style="margin-top:0">Import CSV</h2><p class="m">Required columns: title, author, genre. Optional: subtitle, series, series_order, reading_order, publication_order, publication_year, isbn_13, owned, read, notes, description, book_id. A book that already exists (matched by book_id, or by title + author) is <strong>updated</strong> with the values in the file; a column that is missing from the file leaves that field as it is, while a blank cell clears it. New books are added. Nothing is ever deleted by an import. Dates: give the year only (for example 1954). A column named publication_date is also accepted, and only its year is used.</p><input type="file" id="fi" accept=".csv,text/csv"><div id="ir" class="m" role="status"></div><p><button type="button" id="ic">Close</button></p>`;
   d.showModal();$("ic").onclick=()=>d.close();
   $("fi").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();
     r.onload=async()=>{const out=$("ir");out.innerHTML=await doImport(String(r.result),out);fill();render()};r.readAsText(f)};
 }
 function exp(){
   const q=v=>{v=v==null?"":String(v);return/[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
-  const H=["book_id","title","subtitle","author","genre","series","series_order","reading_order","publication_order","publication_date","isbn_13","owned","read","notes","description"];
-  const rows=books.map(b=>[b.book_id,b.title,b.subtitle,A(b.author_id).name,G(b.genre_id).name,b.series_id?S(b.series_id).name:"",b.series_order,b.reading_order,b.publication_order,b.publication_date,b.isbn_13,b.owned,b.read,b.notes,b.description].map(q).join(","));
+  const H=["book_id","title","subtitle","author","genre","series","series_order","reading_order","publication_order","publication_year","isbn_13","owned","read","notes","description"];
+  const rows=books.map(b=>[b.book_id,b.title,b.subtitle,A(b.author_id).name,G(b.genre_id).name,b.series_id?S(b.series_id).name:"",b.series_order,b.reading_order,b.publication_order,b.publication_year,b.isbn_13,b.owned,b.read,b.notes,b.description].map(q).join(","));
   const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["﻿"+[H.join(","),...rows].join("\r\n")],{type:"text/csv"}));
   a.download="reading-list.csv";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 }
