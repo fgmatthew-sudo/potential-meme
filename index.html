@@ -3,8 +3,8 @@
 <title>Reading List</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{--bg:#faf7f2;--fg:#2a2622;--mut:#7a7168;--card:#fff;--bd:#e4ddd2;--ok:#2f7d4f;--okbg:#e3f3e9;--ac:#8a4b2a;--er:#c0392b}
-@media(prefers-color-scheme:dark){:root{--bg:#1b1917;--fg:#eee8df;--mut:#a39a8e;--card:#262321;--bd:#3a3531;--ok:#6fcf97;--okbg:#1f3a2a;--ac:#e0a47e;--er:#ff8a7a}}
+:root{--bg:#faf7f2;--fg:#2a2622;--mut:#7a7168;--card:#fff;--bd:#e4ddd2;--ok:#2f7d4f;--okbg:#e3f3e9;--ac:#8a4b2a;--er:#c0392b;--yw:#fdf3c8;--ywb:#e3cf86;--gn:#dcf1e1;--gnb:#9fcfae}
+@media(prefers-color-scheme:dark){:root{--bg:#1b1917;--fg:#eee8df;--mut:#a39a8e;--card:#262321;--bd:#3a3531;--ok:#6fcf97;--okbg:#1f3a2a;--ac:#e0a47e;--er:#ff8a7a;--yw:#3a3316;--ywb:#6e5f2a;--gn:#1d3a29;--gnb:#2f6a46}}
 *{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}
 body{background:var(--bg);color:var(--fg);font:15px/1.4 Georgia,'Times New Roman',serif;padding:12px 14px 40px;max-width:900px;margin:auto}
 h1{font-size:22px;margin:4px 0 10px}h2{font-size:17px;margin:20px 0 8px;color:var(--ac)}
@@ -21,6 +21,7 @@ dialog{background:var(--card);color:var(--fg);border:1px solid var(--bd);border-
 dialog::backdrop{background:#0008}dl{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;margin:10px 0;font-size:14px}dt{color:var(--mut)}dd{margin:0}
 textarea{width:100%;min-height:70px}
 .fm label{display:block;font-size:13px;color:var(--mut);margin-top:8px}.fm input:not([type=checkbox]),.fm textarea{width:100%}.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.row.st-own{background:var(--yw);border-color:var(--ywb)}.row.st-done{background:var(--gn);border-color:var(--gnb)}
 .cov.has{padding:0}.cov img{width:100%;height:100%;object-fit:cover;border-radius:5px;display:block}
 .cov.big{flex:none;width:130px;height:195px;font-size:12px;margin:0 0 10px}
 .cg{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;margin:10px 0}
@@ -93,7 +94,7 @@ async function onSession(s){
   history.replaceState({v:"home",g:null},"");go(null,false);
 }
 // Diagnostic line (safe to show: it reveals only the project address and the start of the public key)
-try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v12`}
+try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v14`}
 catch(e){$("diag").textContent=`Check: the Supabase address is not a valid web address (${JSON.stringify(SUPABASE_URL)}) · app v4`}
 if(SUPABASE_URL.startsWith("YOUR_")){showLogin("Set SUPABASE_URL and SUPABASE_ANON_KEY at the top of index.html.");$("gin").hidden=true}
 else if(!window.supabase){showLogin("Could not load the Supabase library. Check your connection.");$("gin").hidden=true}
@@ -199,7 +200,7 @@ function coverBox(b,big){
   const inner=c?`<img class="cim" src="${esc(big?c.image_url:(c.thumbnail_url||c.image_url))}" alt="${esc(c.alt_text||"Cover of "+b.title)}" loading="lazy" referrerpolicy="no-referrer">`:"[Book Cover Unavailable]";
   return`<div class="${cls}" style="background:hsl(${hue(b.book_id)} 35% 38%)"${c?"":` role="img" aria-label="Cover of ${esc(b.title)} unavailable"`}>${inner}</div>`}
 function row(b){const s=b.series_id?esc(S(b.series_id).name):"Standalone";
-  return`<div class="row">${coverBox(b)}<div class="main"><button class="t" data-open="${esc(b.book_id)}">${esc(b.title)}</button><div class="m">${esc(A(b.author_id).name)} · ${esc(G(b.genre_id).name)}</div><div class="m">Series: ${s}${b.reading_order!=null?` · Read #${b.reading_order}`:""}</div><div class="tg">${tog(b,"owned")}${tog(b,"read")}</div></div></div>`}
+  return`<div class="row${b.owned?(b.read?" st-done":" st-own"):""}">${coverBox(b)}<div class="main"><button class="t" data-open="${esc(b.book_id)}">${esc(b.title)}</button><div class="m">${esc(A(b.author_id).name)} · ${esc(G(b.genre_id).name)}</div><div class="m">Series: ${s}${b.reading_order!=null?` · Read #${b.reading_order}`:""}</div><div class="tg">${tog(b,"owned")}${tog(b,"read")}</div></div></div>`}
 function renderHome(){
   const by={};books.forEach(b=>{const x=(by[b.genre_id]??={n:0,r:0});x.n++;if(b.read)x.r++});
   const gl=genres.filter(g=>by[g.genre_id]).sort((x,y)=>x.name.localeCompare(y.name));
@@ -287,7 +288,7 @@ async function doImport(t,out){
   const rows=parseCSV(t.replace(/^﻿/,""));if(rows.length<2)return"No data rows found.";
   const h=rows[0].map(x=>x.trim().toLowerCase()),miss=["title","author","genre"].filter(c=>!h.includes(c));
   if(miss.length)return"Missing required column(s): "+miss.join(", ");
-  let added=0,updated=0,same=0;const err=[];
+  let added=0,updated=0,same=0;const err=[],again=[],touched=new Set();
   for(let i=1;i<rows.length;i++){
     const r=rows[i],raw={};h.forEach((c,j)=>{if(c)raw[c]=r[j]});
     // legacy column name: accept publication_date but keep only the year
@@ -312,12 +313,15 @@ async function doImport(t,out){
     for(const k in raw){if(k=="book_id"||raw[k]===undefined)continue;d[k]=raw[k]}
     if(!ex){if(d.owned===undefined)d.owned=false;if(d.read===undefined)d.read=false}
     const e=val(d);if(e.length){err.push(`Row ${i+1}: ${e.join("; ")}`);continue}
-    if(ex&&norm(d)==norm(toForm(ex))){same++;continue}
+    // a row that points at a book this same file already handled is a repeat: report it instead of silently merging it
+    if(ex&&touched.has(ex.book_id)){again.push(`Row ${i+1}: "${String(d.title).trim()}"${nz(d.series)?` (${nz(d.series)})`:""} repeats an earlier row`);continue}
+    if(ex&&norm(d)==norm(toForm(ex))){same++;touched.add(ex.book_id);continue}
     out.textContent=`Importing ${i} of ${rows.length-1}…`;
-    try{await put(d,ex||undefined);ex?updated++:added++}catch(x){err.push(`Row ${i+1}: ${x.message}`)}
+    try{const nb=await put(d,ex||undefined);touched.add(nb.book_id);ex?updated++:added++}catch(x){err.push(`Row ${i+1}: ${x.message}`)}
   }
   await prune();
-  return`<strong>${added} added</strong>, ${updated} updated, ${same} unchanged, ${err.length} invalid.`+(err.length?"<ul>"+err.slice(0,10).map(x=>`<li>${esc(x)}</li>`).join("")+(err.length>10?`<li>…and ${err.length-10} more</li>`:"")+"</ul>":"");
+  const list=(arr,label)=>arr.length?`<p class="m"><strong>${label}</strong></p><ul>`+arr.slice(0,10).map(x=>`<li>${esc(x)}</li>`).join("")+(arr.length>10?`<li>…and ${arr.length-10} more</li>`:"")+"</ul>":"";
+  return`${rows.length-1} rows read: <strong>${added} added</strong>, ${updated} updated, ${same} unchanged, ${again.length} repeated within the file, ${err.length} invalid.`+list(again,"Repeated rows (skipped, the first one was used):")+list(err,"Invalid rows (skipped):");
 }
 function imp(){
   const d=$("im");d.innerHTML=`<h2 style="margin-top:0">Import CSV</h2><p class="m">Required columns: title, author, genre. Optional: subtitle, series, reading_order (also used as the series order), publication_order, publication_year, owned, read, notes, description, book_id. A book that already exists (matched by book_id, or by title + author + series) is <strong>updated</strong> with the values in the file; a column that is missing from the file leaves that field as it is, while a blank cell clears it. New books are added. Nothing is ever deleted by an import. Dates: give the year only (for example 1954). A column named publication_date is also accepted, and only its year is used. Older files with series_order or isbn_13 columns still import: series_order is used as the reading order if there is no reading_order column, and isbn_13 is ignored.</p><input type="file" id="fi" accept=".csv,text/csv"><div id="ir" class="m" role="status"></div><p><button type="button" id="ic">Close</button></p>`;
