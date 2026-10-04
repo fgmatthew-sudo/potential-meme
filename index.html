@@ -21,6 +21,11 @@ dialog{background:var(--card);color:var(--fg);border:1px solid var(--bd);border-
 dialog::backdrop{background:#0008}dl{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;margin:10px 0;font-size:14px}dt{color:var(--mut)}dd{margin:0}
 textarea{width:100%;min-height:70px}
 .fm label{display:block;font-size:13px;color:var(--mut);margin-top:8px}.fm input:not([type=checkbox]),.fm textarea{width:100%}.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cov.has{padding:0}.cov img{width:100%;height:100%;object-fit:cover;border-radius:5px;display:block}
+.cov.big{flex:none;width:130px;height:195px;font-size:12px;margin:0 0 10px}
+.cg{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;margin:10px 0}
+.ci{display:flex;flex-direction:column;gap:3px;padding:4px;text-align:left;font-size:11px;color:var(--mut)}
+.ci img{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:4px;background:var(--bd)}
 #login{text-align:center;margin-top:20vh}
 </style></head><body>
 
@@ -46,7 +51,7 @@ textarea{width:100%;min-height:70px}
 <div class="cnt" id="cnt"></div><div class="cnt err" id="msg" role="status"></div><div id="list"></div>
 </div>
 
-<dialog id="dlg"></dialog><dialog id="fd"></dialog><dialog id="im"></dialog>
+<dialog id="dlg"></dialog><dialog id="fd"></dialog><dialog id="im"></dialog><dialog id="cvd"></dialog>
 <datalist id="dl_a"></datalist><datalist id="dl_g"></datalist><datalist id="dl_s"></datalist>
 
 <script>
@@ -58,7 +63,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_nu06QaBn3cq3PVMvxAp8hw_aBQMnC_N";   //
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 const msg=t=>{$("msg").textContent=t||""};
-let sb,uid=null,authors=[],genres=[],series=[],books=[];
+let sb,uid=null,authors=[],genres=[],series=[],books=[],covers=[];
 const A=id=>authors.find(x=>x.author_id==id)||{name:"?",sort_name:"?"};
 const G=id=>genres.find(x=>x.genre_id==id)||{name:"?"};
 const S=id=>series.find(x=>x.series_id==id)||{name:"?"};
@@ -72,7 +77,7 @@ async function onSession(s){
   await load();
 }
 // Diagnostic line (safe to show: it reveals only the project address and the start of the public key)
-try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v6`}
+try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v7`}
 catch(e){$("diag").textContent=`Check: the Supabase address is not a valid web address (${JSON.stringify(SUPABASE_URL)}) · app v4`}
 if(SUPABASE_URL.startsWith("YOUR_")){showLogin("Set SUPABASE_URL and SUPABASE_ANON_KEY at the top of index.html.");$("gin").hidden=true}
 else if(!window.supabase){showLogin("Could not load the Supabase library. Check your connection.");$("gin").hidden=true}
@@ -98,9 +103,9 @@ $("out").onclick=()=>sb.auth.signOut();
 /* ---------- data ---------- */
 async function load(){
   msg("Loading…");
-  const r=await Promise.all(["authors","genres","series","books"].map(t=>sb.from(t).select("*")));
+  const r=await Promise.all(["authors","genres","series","books","book_covers"].map(t=>sb.from(t).select("*")));
   const e=r.find(x=>x.error);if(e){msg("Load failed: "+e.error.message);return}
-  [authors,genres,series,books]=r.map(x=>x.data);msg("");fill();render();
+  [authors,genres,series,books,covers]=r.map(x=>x.data);msg("");fill();render();
 }
 async function upd(b,patch){
   const old={};for(const k in patch)old[k]=b[k];Object.assign(b,patch);
@@ -161,8 +166,12 @@ $("so").innerHTML=Object.entries(sorts).map(([k,v])=>`<option value="${k}">Sort:
 function key(b,k){switch(k){case"title":return b.title.toLowerCase();case"author":return A(b.author_id).sort_name;case"genre":return G(b.genre_id).name;case"series":return b.series_id?S(b.series_id).name:null;case"owned":case"read":return b[k]?0:1;default:return b[k]}}
 function cmp(k){return(a,b)=>{const x=key(a,k),y=key(b,k);if(x==null&&y==null)return 0;if(x==null)return 1;if(y==null)return -1;return x<y?-1:x>y?1:0}}
 function tog(b,f){const on=b[f],lab=f=="owned"?(on?"● Owned":"○ Not owned"):(on?"✓ Read":"○ Unread");return`<button aria-pressed="${on}" data-id="${esc(b.book_id)}" data-f="${f}">${lab}</button>`}
+function coverBox(b,big){
+  const c=covers.find(x=>x.cover_id==b.cover_id),cls="cov"+(big?" big":"")+(c?" has":"");
+  const inner=c?`<img class="cim" src="${esc(big?c.image_url:(c.thumbnail_url||c.image_url))}" alt="${esc(c.alt_text||"Cover of "+b.title)}" loading="lazy" referrerpolicy="no-referrer">`:"[Book Cover Unavailable]";
+  return`<div class="${cls}" style="background:hsl(${hue(b.book_id)} 35% 38%)"${c?"":` role="img" aria-label="Cover of ${esc(b.title)} unavailable"`}>${inner}</div>`}
 function row(b){const s=b.series_id?esc(S(b.series_id).name):"Standalone";
-  return`<div class="row"><div class="cov" style="background:hsl(${hue(b.book_id)} 35% 38%)" role="img" aria-label="Cover of ${esc(b.title)} unavailable">[Book Cover Unavailable]</div><div class="main"><button class="t" data-open="${esc(b.book_id)}">${esc(b.title)}</button><div class="m">${esc(A(b.author_id).name)} · ${esc(G(b.genre_id).name)}</div><div class="m">Series: ${s}${b.reading_order!=null?` · Read #${b.reading_order}`:""}</div><div class="tg">${tog(b,"owned")}${tog(b,"read")}</div></div></div>`}
+  return`<div class="row">${coverBox(b)}<div class="main"><button class="t" data-open="${esc(b.book_id)}">${esc(b.title)}</button><div class="m">${esc(A(b.author_id).name)} · ${esc(G(b.genre_id).name)}</div><div class="m">Series: ${s}${b.reading_order!=null?` · Read #${b.reading_order}`:""}</div><div class="tg">${tog(b,"owned")}${tog(b,"read")}</div></div></div>`}
 function render(){
   const q=$("q").value.toLowerCase(),g=$("fg").value,a=$("fa").value,s=$("fs").value,o=$("fo").value,r=$("fr").value,k=$("so").value;
   const l=books.filter(b=>{
@@ -183,12 +192,13 @@ function render(){
 /* ---------- detail ---------- */
 function detail(id){
   const b=books.find(x=>x.book_id==id);if(!b)return;const d=$("dlg"),v=x=>x==null?"—":esc(x);
-  d.innerHTML=`<h2 style="margin-top:0">${esc(b.title)}</h2><div class="m">${esc(A(b.author_id).name)}</div><dl><dt>Genre</dt><dd>${esc(G(b.genre_id).name)}</dd><dt>Series</dt><dd>${b.series_id?esc(S(b.series_id).name):"Standalone"}</dd><dt>Series / reading order</dt><dd>${v(b.reading_order)}</dd><dt>Publication order</dt><dd>${v(b.publication_order)}</dd><dt>Published</dt><dd>${v(b.publication_year)}</dd></dl><p>${b.description?esc(b.description):'<span class="m">No description.</span>'}</p><div class="tg">${tog(b,"owned")}${tog(b,"read")}</div><p><label class="m" for="nt">My notes</label><textarea id="nt">${esc(b.notes)}</textarea></p><div class="tg"><button id="ed">Edit</button><button id="dl">Delete</button><button id="cl">Close</button></div>`;
+  d.innerHTML=`${coverBox(b,true)}<h2 style="margin-top:0">${esc(b.title)}</h2><div class="m">${esc(A(b.author_id).name)}</div><dl><dt>Genre</dt><dd>${esc(G(b.genre_id).name)}</dd><dt>Series</dt><dd>${b.series_id?esc(S(b.series_id).name):"Standalone"}</dd><dt>Series / reading order</dt><dd>${v(b.reading_order)}</dd><dt>Publication order</dt><dd>${v(b.publication_order)}</dd><dt>Published</dt><dd>${v(b.publication_year)}</dd></dl><p>${b.description?esc(b.description):'<span class="m">No description.</span>'}</p><div class="tg">${tog(b,"owned")}${tog(b,"read")}</div><p><label class="m" for="nt">My notes</label><textarea id="nt">${esc(b.notes)}</textarea></p><div class="tg"><button id="ed">Edit</button><button id="cv">Choose cover</button><button id="dl">Delete</button><button id="cl">Close</button></div>`;
   d.showModal();
   let tm;$("nt").oninput=e=>{clearTimeout(tm);const val=e.target.value||null;tm=setTimeout(()=>upd(b,{notes:val}),700)};
   $("nt").onchange=e=>{clearTimeout(tm);upd(b,{notes:e.target.value||null})};
   $("cl").onclick=()=>d.close();
   $("ed").onclick=()=>{d.close();form(b)};
+  $("cv").onclick=()=>{d.close();coverPicker(b)};
   $("dl").onclick=async function(){
     if(!this.dataset.c){this.dataset.c=1;this.textContent="Confirm delete?";return}
     const {error}=await sb.from("books").delete().eq("book_id",b.book_id);
@@ -265,6 +275,83 @@ function exp(){
   const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["﻿"+[H.join(","),...rows].join("\r\n")],{type:"text/csv"}));
   a.download="reading-list.csv";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 }
+
+/* ---------- cover picker (Open Library) ---------- */
+const OL="https://openlibrary.org",olImg=(id,s)=>`https://covers.openlibrary.org/b/id/${id}-${s}.jpg`;
+async function olJSON(u){const r=await fetch(u);if(!r.ok)throw new Error("Open Library answered "+r.status);return r.json()}
+async function setCover(b,c){
+  const {data,error}=await sb.from("book_covers").insert({book_id:b.book_id,image_url:c.image_url,thumbnail_url:c.thumbnail_url,alt_text:c.alt_text,is_primary:true,source:c.source}).select().single();
+  if(error)throw error;
+  const r=await sb.from("books").update({cover_id:data.cover_id}).eq("book_id",b.book_id);
+  if(r.error){await sb.from("book_covers").delete().eq("cover_id",data.cover_id);throw r.error}
+  const hadOld=covers.some(x=>x.book_id==b.book_id);
+  b.cover_id=data.cover_id;covers=covers.filter(x=>x.book_id!=b.book_id);covers.push(data);
+  if(hadOld)await sb.from("book_covers").delete().eq("book_id",b.book_id).neq("cover_id",data.cover_id);
+}
+async function clearCover(b){
+  const r=await sb.from("books").update({cover_id:null}).eq("book_id",b.book_id);if(r.error)throw r.error;
+  b.cover_id=null;
+  const d=await sb.from("book_covers").delete().eq("book_id",b.book_id);if(d.error)throw d.error;
+  covers=covers.filter(x=>x.book_id!=b.book_id);
+}
+function coverPicker(b){
+  const d=$("cvd"),st={works:[],key:null,offset:0,seen:new Set(),done:true,tok:0};
+  d.innerHTML=`<h2 style="margin-top:0">Choose cover</h2><p class="m">${esc(b.title)}</p>
+  <div class="fm"><div class="g2"><label>Title<input id="cs_t" value="${esc(b.title)}"></label><label>Author<input id="cs_a" value="${esc(A(b.author_id).name)}"></label></div></div>
+  <div class="tg"><button type="button" id="cs_go">Search</button></div>
+  <div class="fm"><label>Matching book<select id="cs_w" style="width:100%"></select></label></div>
+  <div id="cs_msg" class="m" role="status"></div><div id="cs_g" class="cg"></div>
+  <div class="tg"><button type="button" id="cs_more" hidden>Show more</button></div>
+  <div class="fm"><label>Or paste an image address<input id="cs_u" placeholder="https://…"></label></div>
+  <div class="tg"><button type="button" id="cs_use">Use this address</button><button type="button" id="cs_rm">Remove cover</button><button type="button" id="cs_x">Close</button></div>`;
+  const say=t=>{$("cs_msg").textContent=t||""};
+  const busy=on=>d.querySelectorAll("button").forEach(x=>x.disabled=on);
+  async function search(){
+    const t=$("cs_t").value.trim(),a=$("cs_a").value.trim();if(!t){say("Enter a title.");return}
+    const tok=++st.tok;say("Searching Open Library…");$("cs_g").innerHTML="";$("cs_more").hidden=true;$("cs_w").innerHTML="";
+    try{
+      const q=new URLSearchParams({title:t,limit:"8",fields:"key,title,author_name,first_publish_year,edition_count"});if(a)q.set("author",a);
+      const j=await olJSON(`${OL}/search.json?${q}`);if(tok!==st.tok)return;
+      st.works=(j.docs||[]).filter(w=>w.key);
+      if(!st.works.length){say("No matching books found. Try a shorter title, or paste an image address below.");return}
+      $("cs_w").innerHTML=st.works.map((w,i)=>`<option value="${i}">${esc(w.title)} — ${esc((w.author_name||["?"])[0])} (${w.first_publish_year||"?"}) · ${w.edition_count||0} editions</option>`).join("");
+      await loadWork();
+    }catch(e){if(tok===st.tok)say("Could not reach Open Library ("+e.message+"). You can still paste an image address below.")}
+  }
+  async function loadWork(){
+    const w=st.works[+$("cs_w").value];if(!w)return;
+    st.key=w.key;st.offset=0;st.seen=new Set();st.done=false;st.tok++;$("cs_g").innerHTML="";await more();
+  }
+  async function more(){
+    const tok=st.tok,w=st.key;let added=0;say("Loading covers…");$("cs_more").hidden=true;
+    try{
+      while(!st.done&&added<24){
+        const j=await olJSON(`${OL}${w}/editions.json?limit=50&offset=${st.offset}`);if(tok!==st.tok)return;
+        const es=j.entries||[];st.offset+=es.length;
+        if(es.length<50||st.offset>=(j.size||0))st.done=true;
+        for(const e of es)for(const id of (e.covers||[])){
+          if(!(id>0)||st.seen.has(id))continue;st.seen.add(id);added++;
+          const cap=[e.publish_date,(e.publishers||[])[0]].filter(Boolean).join(" · ");
+          $("cs_g").insertAdjacentHTML("beforeend",`<button type="button" class="ci" data-cid="${id}" title="${esc(cap)}"><img src="${olImg(id,"M")}" alt="Cover option" loading="lazy" referrerpolicy="no-referrer"><span>${esc(cap||"Edition")}</span></button>`);
+        }
+      }
+      say(st.seen.size?`${st.seen.size} covers shown. Click one to use it.`:"No covers found for this book. Try another match above, or paste an address below.");
+      $("cs_more").hidden=st.done;
+    }catch(e){if(tok===st.tok)say("Could not load editions ("+e.message+").")}
+  }
+  async function choose(c){busy(true);say("Saving…");try{await setCover(b,c);d.close();render()}catch(e){say("Could not save: "+e.message);busy(false)}}
+  $("cs_go").onclick=search;$("cs_w").onchange=loadWork;$("cs_more").onclick=more;
+  $("cs_t").onkeydown=$("cs_a").onkeydown=e=>{if(e.key==="Enter")search()};
+  $("cs_g").onclick=e=>{const t=e.target.closest(".ci");if(!t)return;choose({image_url:olImg(t.dataset.cid,"L"),thumbnail_url:olImg(t.dataset.cid,"M"),alt_text:"Cover of "+b.title,source:"Open Library cover "+t.dataset.cid})};
+  $("cs_use").onclick=()=>{const u=$("cs_u").value.trim();if(!/^https:\/\/\S+$/i.test(u)){say("Enter an address starting with https://");return}choose({image_url:u,thumbnail_url:null,alt_text:"Cover of "+b.title,source:"Pasted address"})};
+  $("cs_rm").onclick=async()=>{busy(true);try{await clearCover(b);d.close();render()}catch(e){say("Could not remove: "+e.message);busy(false)}};
+  $("cs_x").onclick=()=>d.close();
+  d.showModal();search();
+}
+// a cover image that fails to load falls back to the plain tile; a failed option in the picker disappears
+document.addEventListener("error",e=>{const t=e.target;if(!t||t.tagName!=="IMG")return;
+  const ci=t.closest(".ci");if(ci){ci.remove();return}
+  if(t.classList.contains("cim")){const p=t.parentElement;p.classList.remove("has");p.textContent="[Book Cover Unavailable]"}},true);
 
 /* ---------- events ---------- */
 document.addEventListener("click",async e=>{
