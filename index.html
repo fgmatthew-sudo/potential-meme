@@ -26,6 +26,9 @@ textarea{width:100%;min-height:70px}
 .cg{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;margin:10px 0}
 .ci{display:flex;flex-direction:column;gap:3px;padding:4px;text-align:left;font-size:11px;color:var(--mut)}
 .ci img{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:4px;background:var(--bd)}
+.gg{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.gt{display:flex;flex-direction:column;gap:4px;padding:16px 12px;text-align:left;border-radius:12px;border-left:6px solid var(--ac)}
+.gt .gn{font-size:16px;font-weight:bold}
 #login{text-align:center;margin-top:20vh}
 </style></head><body>
 
@@ -39,6 +42,18 @@ textarea{width:100%;min-height:70px}
 
 <div id="app" hidden>
 <div class="bar top"><h1>📚 My Reading List</h1><span><span class="m" id="who"></span> <button id="out">Sign out</button></span></div>
+<div class="cnt err" id="msg" role="status"></div>
+
+<div id="home">
+<div class="bar"><button id="ad">+ Add book</button><button id="imp">Import CSV</button><button id="ex">Export CSV</button></div>
+<h2 style="margin-top:6px">Genres</h2>
+<div class="cnt" id="hcnt"></div>
+<div class="gg" id="genres"></div>
+</div>
+
+<div id="listview" hidden>
+<div class="bar"><button id="back">← All genres</button><button id="ad2" data-act="ad">+ Add book</button></div>
+<h2 id="ltitle" style="margin-top:6px"></h2>
 <div class="bar">
 <input type="search" id="q" placeholder="Search title, author, series, genre" aria-label="Search">
 <select id="fg" aria-label="Genre"></select><select id="fa" aria-label="Author"></select><select id="fs" aria-label="Series"></select>
@@ -46,9 +61,9 @@ textarea{width:100%;min-height:70px}
 <select id="fr" aria-label="Read"><option value="">Read: any</option><option value="1">✓ Read</option><option value="0">○ Unread</option></select>
 <select id="so" aria-label="Sort"></select>
 <button id="gv" aria-pressed="true">Group by series</button>
-<button id="ad">+ Add book</button><button id="imp">Import CSV</button><button id="ex">Export CSV</button>
 </div>
-<div class="cnt" id="cnt"></div><div class="cnt err" id="msg" role="status"></div><div id="list"></div>
+<div class="cnt" id="cnt"></div><div id="list"></div>
+</div>
 </div>
 
 <dialog id="dlg"></dialog><dialog id="fd"></dialog><dialog id="im"></dialog><dialog id="cvd"></dialog>
@@ -75,9 +90,10 @@ async function onSession(s){
   if(s.user.id===uid)return;
   uid=s.user.id;$("login").hidden=true;$("app").hidden=false;$("who").textContent=s.user.email||"";
   await load();
+  history.replaceState({v:"home",g:null},"");go(null,false);
 }
 // Diagnostic line (safe to show: it reveals only the project address and the start of the public key)
-try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v9`}
+try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v10`}
 catch(e){$("diag").textContent=`Check: the Supabase address is not a valid web address (${JSON.stringify(SUPABASE_URL)}) · app v4`}
 if(SUPABASE_URL.startsWith("YOUR_")){showLogin("Set SUPABASE_URL and SUPABASE_ANON_KEY at the top of index.html.");$("gin").hidden=true}
 else if(!window.supabase){showLogin("Could not load the Supabase library. Check your connection.");$("gin").hidden=true}
@@ -172,7 +188,29 @@ function coverBox(b,big){
   return`<div class="${cls}" style="background:hsl(${hue(b.book_id)} 35% 38%)"${c?"":` role="img" aria-label="Cover of ${esc(b.title)} unavailable"`}>${inner}</div>`}
 function row(b){const s=b.series_id?esc(S(b.series_id).name):"Standalone";
   return`<div class="row">${coverBox(b)}<div class="main"><button class="t" data-open="${esc(b.book_id)}">${esc(b.title)}</button><div class="m">${esc(A(b.author_id).name)} · ${esc(G(b.genre_id).name)}</div><div class="m">Series: ${s}${b.reading_order!=null?` · Read #${b.reading_order}`:""}</div><div class="tg">${tog(b,"owned")}${tog(b,"read")}</div></div></div>`}
-function render(){
+function renderHome(){
+  const by={};books.forEach(b=>{const x=(by[b.genre_id]??={n:0,r:0});x.n++;if(b.read)x.r++});
+  const gl=genres.filter(g=>by[g.genre_id]).sort((x,y)=>x.name.localeCompare(y.name));
+  const tile=(id,name,n,r,h)=>`<button class="gt" data-genre="${esc(id)}" style="border-left-color:hsl(${h} 45% 45%)"><span class="gn">${esc(name)}</span><span class="m">${n} book${n==1?"":"s"} · ${r} read</span></button>`;
+  $("hcnt").textContent=books.length?`${books.length} book${books.length==1?"":"s"} in ${gl.length} genre${gl.length==1?"":"s"}`:"";
+  $("genres").innerHTML=books.length
+    ?tile("","All books",books.length,books.filter(b=>b.read).length,30)+gl.map(g=>tile(g.genre_id,g.name,by[g.genre_id].n,by[g.genre_id].r,hue(g.genre_id))).join("")
+    :'<p class="m">No books yet. Use “+ Add book” or “Import CSV” to get started.</p>';
+}
+function render(){renderHome();renderList()}
+function go(g,push,fresh){
+  const home=g===null;
+  if(!home){
+    if(fresh)["q","fa","fs","fo","fr"].forEach(i=>$(i).value="");
+    $("fg").value=g;if($("fg").value!==g)$("fg").value="";
+  }
+  $("home").hidden=!home;$("listview").hidden=home;
+  if(push)history.pushState({v:home?"home":"list",g},"");
+  render();window.scrollTo(0,0);
+}
+window.addEventListener("popstate",e=>{const s=e.state;go(s&&s.v==="list"?s.g:null,false)});
+function renderList(){
+  $("ltitle").textContent=$("fg").value?G($("fg").value).name:"All books";
   const q=$("q").value.toLowerCase(),g=$("fg").value,a=$("fa").value,s=$("fs").value,o=$("fo").value,r=$("fr").value,k=$("so").value;
   const l=books.filter(b=>{
     if(g&&b.genre_id!=g||a&&b.author_id!=a)return false;
@@ -209,7 +247,7 @@ function detail(id){
 
 /* ---------- add / edit ---------- */
 function form(b){
-  const d=$("fd"),o=b?{...b,author:A(b.author_id).name,genre:G(b.genre_id).name,series:b.series_id?S(b.series_id).name:""}:{owned:false,read:false};
+  const d=$("fd"),o=b?{...b,author:A(b.author_id).name,genre:G(b.genre_id).name,series:b.series_id?S(b.series_id).name:""}:{owned:false,read:false,genre:(!$("listview").hidden&&$("fg").value)?G($("fg").value).name:""};
   const I=(k,l,ex="")=>`<label>${l}<input id="f_${k}" value="${esc(o[k])}" ${ex}></label>`;
   d.innerHTML=`<h2 style="margin-top:0">${b?"Edit":"Add"} book</h2><div class="fm">${I("title","Title *")}${I("subtitle","Subtitle")}${I("author","Author *",'list="dl_a"')}${I("genre","Genre *",'list="dl_g"')}${I("series","Series (blank = standalone)",'list="dl_s"')}<div class="g2">${I("reading_order","Reading / series order",'inputmode="decimal"')}${I("publication_order","Publication order",'inputmode="decimal"')}${I("publication_year","Published (year only, e.g. 1954)",'inputmode="numeric" maxlength="4"')}</div><label>Description<textarea id="f_description">${esc(o.description)}</textarea></label><label><input type="checkbox" id="f_owned" ${o.owned?"checked":""}> Owned</label><label><input type="checkbox" id="f_read" ${o.read?"checked":""}> Read</label></div><p id="fe" class="m err" role="alert"></p><div class="tg"><button type="button" id="fsv">Save</button><button type="button" id="fc">Cancel</button></div>`;
   d.showModal();$("fc").onclick=()=>d.close();
@@ -391,6 +429,8 @@ document.addEventListener("error",e=>{const t=e.target;if(!t||t.tagName!=="IMG")
 /* ---------- events ---------- */
 document.addEventListener("click",async e=>{
   const t=e.target.closest("button");if(!t)return;
+  if(t.dataset.genre!==undefined){go(t.dataset.genre,true,true);return}
+  if(t.id=="back"){if(history.state&&history.state.v==="list")history.back();else go(null,false);return}
   if(t.dataset.open)return detail(t.dataset.open);
   if(t.dataset.f){
     const b=books.find(x=>x.book_id==t.dataset.id);if(!b)return;
@@ -398,7 +438,7 @@ document.addEventListener("click",async e=>{
     const p=upd(b,{[t.dataset.f]:!b[t.dataset.f]});refresh();await p;refresh();return;
   }
   if(t.id=="gv"){t.setAttribute("aria-pressed",t.getAttribute("aria-pressed")!="true");render()}
-  if(t.id=="ad")form();if(t.id=="imp")imp();if(t.id=="ex")exp();
+  if(t.id=="ad"||t.id=="ad2")form();if(t.id=="imp")imp();if(t.id=="ex")exp();
 });
 ["q","fg","fa","fs","fo","fr","so"].forEach(i=>$(i).addEventListener("input",render));
 </script></body></html>
