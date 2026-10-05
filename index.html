@@ -29,7 +29,7 @@ textarea{width:100%;min-height:70px}
 .ci img{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:4px;background:var(--bd)}
 .gg{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
 .gt{display:flex;flex-direction:column;gap:4px;padding:16px 12px;text-align:left;border-radius:12px;border-left:6px solid var(--ac)}
-.gt .gn{font-size:16px;font-weight:bold}#sbtns{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}.gt .sr{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;width:100%}.gt .si{display:flex;flex-direction:column;gap:4px}.gt .sr .cov{flex:none;width:56px;height:84px}.gt.own{background:var(--yw);border-top-color:var(--ywb);border-right-color:var(--ywb);border-bottom-color:var(--ywb)}.gt.wish{background:var(--bl);border-top-color:var(--blb);border-right-color:var(--blb);border-bottom-color:var(--blb)}.gt.done{background:var(--gn);border-top-color:var(--gnb);border-right-color:var(--gnb);border-bottom-color:var(--gnb)}.gt.own.wish{background:linear-gradient(90deg,var(--yw) 50%,var(--bl) 50%)}.gt.c{border-left-color:var(--tr)}
+.gt .gn{font-size:16px;font-weight:bold}#sbtns{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}.gt .sr{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;width:100%}.gt .si{display:flex;flex-direction:column;gap:4px}.gt .sr .cov{flex:none;width:56px;height:84px}.gt.own{background:var(--yw);border-top-color:var(--ywb);border-right-color:var(--ywb);border-bottom-color:var(--ywb)}.gt.wish{background:var(--bl);border-top-color:var(--blb);border-right-color:var(--blb);border-bottom-color:var(--blb)}.gt.done{background:var(--gn);border-top-color:var(--gnb);border-right-color:var(--gnb);border-bottom-color:var(--gnb)}.gt.own.wish{background:linear-gradient(90deg,var(--yw) 50%,var(--bl) 50%)}.gt.c{border-left-color:var(--tr)}
 #login{text-align:center;margin-top:20vh}
 </style></head><body>
 
@@ -98,7 +98,7 @@ async function onSession(s){
   history.replaceState({v:"home",g:null},"");go(null,false);
 }
 // Diagnostic line (safe to show: it reveals only the project address and the start of the public key)
-try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v30`}
+try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v31`}
 catch(e){$("diag").textContent=`Check: the Supabase address is not a valid web address (${JSON.stringify(SUPABASE_URL)}) · app v4`}
 if(SUPABASE_URL.startsWith("YOUR_")){showLogin("Set SUPABASE_URL and SUPABASE_ANON_KEY at the top of index.html.");$("gin").hidden=true}
 else if(!window.supabase){showLogin("Could not load the Supabase library. Check your connection.");$("gin").hidden=true}
