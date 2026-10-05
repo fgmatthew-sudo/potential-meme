@@ -3,8 +3,8 @@
 <title>Reading List</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{--bg:#faf7f2;--fg:#2a2622;--mut:#7a7168;--card:#fff;--bd:#e4ddd2;--ok:#2f7d4f;--okbg:#e3f3e9;--ac:#8a4b2a;--er:#c0392b;--yw:#fdf3c8;--ywb:#e3cf86;--gn:#dcf1e1;--gnb:#9fcfae}
-@media(prefers-color-scheme:dark){:root{--bg:#1b1917;--fg:#eee8df;--mut:#a39a8e;--card:#262321;--bd:#3a3531;--ok:#6fcf97;--okbg:#1f3a2a;--ac:#e0a47e;--er:#ff8a7a;--yw:#3a3316;--ywb:#6e5f2a;--gn:#1d3a29;--gnb:#2f6a46}}
+:root{--bg:#faf7f2;--fg:#2a2622;--mut:#7a7168;--card:#fff;--bd:#e4ddd2;--ok:#2f7d4f;--okbg:#e3f3e9;--ac:#8a4b2a;--er:#c0392b;--yw:#fdf3c8;--ywb:#e3cf86;--gn:#dcf1e1;--gnb:#9fcfae;--bl:#d9e7fa;--blb:#9db8e0}
+@media(prefers-color-scheme:dark){:root{--bg:#1b1917;--fg:#eee8df;--mut:#a39a8e;--card:#262321;--bd:#3a3531;--ok:#6fcf97;--okbg:#1f3a2a;--ac:#e0a47e;--er:#ff8a7a;--yw:#3a3316;--ywb:#6e5f2a;--gn:#1d3a29;--gnb:#2f6a46;--bl:#1b2c45;--blb:#33507a}}
 *{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}
 body{background:var(--bg);color:var(--fg);font:15px/1.4 Georgia,'Times New Roman',serif;padding:12px 14px 40px;max-width:900px;margin:auto}
 h1{font-size:22px;margin:4px 0 10px}h2{font-size:17px;margin:20px 0 8px;color:var(--ac)}
@@ -29,7 +29,7 @@ textarea{width:100%;min-height:70px}
 .ci img{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:4px;background:var(--bd)}
 .gg{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
 .gt{display:flex;flex-direction:column;gap:4px;padding:16px 12px;text-align:left;border-radius:12px;border-left:6px solid var(--ac)}
-.gt .gn{font-size:16px;font-weight:bold}.gt.own{background:var(--yw);border-top-color:var(--ywb);border-right-color:var(--ywb);border-bottom-color:var(--ywb)}.gt.c{border-left-color:var(--tr)}
+.gt .gn{font-size:16px;font-weight:bold}.gt.own{background:var(--yw);border-top-color:var(--ywb);border-right-color:var(--ywb);border-bottom-color:var(--ywb)}.gt.wish{background:var(--bl);border-top-color:var(--blb);border-right-color:var(--blb);border-bottom-color:var(--blb)}.gt.own.wish{background:linear-gradient(90deg,var(--yw) 50%,var(--bl) 50%)}.gt.c{border-left-color:var(--tr)}
 #login{text-align:center;margin-top:20vh}
 </style></head><body>
 
@@ -98,7 +98,7 @@ async function onSession(s){
   history.replaceState({v:"home",g:null},"");go(null,false);
 }
 // Diagnostic line (safe to show: it reveals only the project address and the start of the public key)
-try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v25`}
+try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v26`}
 catch(e){$("diag").textContent=`Check: the Supabase address is not a valid web address (${JSON.stringify(SUPABASE_URL)}) · app v4`}
 if(SUPABASE_URL.startsWith("YOUR_")){showLogin("Set SUPABASE_URL and SUPABASE_ANON_KEY at the top of index.html.");$("gin").hidden=true}
 else if(!window.supabase){showLogin("Could not load the Supabase library. Check your connection.");$("gin").hidden=true}
@@ -245,10 +245,10 @@ function renderSeriesBtns(){
   $("fbar").hidden=on||filtersHidden;$("ftog").hidden=on;$("ftog").textContent=filtersHidden?"Show filters":"Hide filters";$("ftog").setAttribute("aria-expanded",String(!filtersHidden));wrap.hidden=!on;$("cnt").hidden=on;$("list").hidden=on;
   $("back").textContent=(g&&!special&&$("fs").value!==""&&books.some(b=>b.genre_id==g&&b.series_id))?"← "+G(g).name:"← Home";
   if(!on){box.innerHTML="";return}
-  const by={};let alone={n:0,o:0,r:0};
-  books.filter(b=>b.genre_id==g).forEach(b=>{const x=b.series_id?(by[b.series_id]??={n:0,o:0,r:0}):alone;x.n++;if(b.owned)x.o++;if(b.read)x.r++});
+  const by={};let alone={n:0,o:0,r:0,w:0};
+  books.filter(b=>b.genre_id==g).forEach(b=>{const x=b.series_id?(by[b.series_id]??={n:0,o:0,r:0,w:0}):alone;x.n++;if(b.owned)x.o++;if(b.read)x.r++;if(b.wishlist)x.w++});
   const ids=Object.keys(by).sort((x,y)=>S(x).name.localeCompare(S(y).name));
-  const gc=tileColor(G(g).name)||`" style="border-left-color:hsl(${hue(g)} 45% 45%)`,t=(v,l,x)=>`<button class="gt${x.o?" own":""}${gc}" data-ser="${esc(v)}"><span class="gn">${esc(l)}</span><span class="m">${x.n} book${x.n==1?"":"s"}</span><span class="m">${x.o} owned</span><span class="m">${x.r} read</span></button>`;
+  const gc=tileColor(G(g).name)||`" style="border-left-color:hsl(${hue(g)} 45% 45%)`,t=(v,l,x)=>`<button class="gt${x.o?" own":""}${x.w?" wish":""}${gc}" data-ser="${esc(v)}"><span class="gn">${esc(l)}</span><span class="m">${x.n} book${x.n==1?"":"s"}</span><span class="m">${x.o} owned</span><span class="m">${x.r} read</span></button>`;
   box.innerHTML=ids.map(i=>t(i,S(i).name,by[i])).join("")+(alone.n?t("__s","Standalone",alone):"");
 }
 function renderList(){
