@@ -54,7 +54,7 @@ textarea{width:100%;min-height:70px}
 </div>
 
 <div id="listview" hidden>
-<div class="bar"><button id="back">← Home</button><button id="ad2" data-act="ad">+ Add book</button></div>
+<div class="bar"><button id="back">← Home</button><button id="ad2" data-act="ad">+ Add book</button><button id="ftog" aria-expanded="true">Hide filters</button></div>
 <h2 id="ltitle" style="margin-top:6px"></h2>
 <div id="sbox" hidden><div class="gg" id="sbtns"></div></div>
 <div id="fbar">
@@ -98,7 +98,7 @@ async function onSession(s){
   history.replaceState({v:"home",g:null},"");go(null,false);
 }
 // Diagnostic line (safe to show: it reveals only the project address and the start of the public key)
-try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v22`}
+try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v24`}
 catch(e){$("diag").textContent=`Check: the Supabase address is not a valid web address (${JSON.stringify(SUPABASE_URL)}) · app v4`}
 if(SUPABASE_URL.startsWith("YOUR_")){showLogin("Set SUPABASE_URL and SUPABASE_ANON_KEY at the top of index.html.");$("gin").hidden=true}
 else if(!window.supabase){showLogin("Could not load the Supabase library. Check your connection.");$("gin").hidden=true}
@@ -214,7 +214,7 @@ function tileColor(name){const k=String(name).trim().toLowerCase(),c=TILE[ALIAS[
 function renderHome(){
   const by={};books.forEach(b=>{const x=(by[b.genre_id]??={n:0,r:0,o:0});x.n++;if(b.read)x.r++;if(b.owned)x.o++});
   const gl=genres.filter(g=>by[g.genre_id]).sort((x,y)=>x.name.localeCompare(y.name));
-  const tile=(id,name,n,r,h,o)=>`<button class="gt${tileColor(name)||(id===""?`" style="border-left-width:1px`:`" style="border-left-color:hsl(${h} 45% 45%)`)}" data-genre="${esc(id)}"><span class="gn">${esc(name)}</span><span class="m">${n} book${n==1?"":"s"} · ${o} owned · ${r} read</span></button>`;
+  const tile=(id,name,n,r,h,o)=>`<button class="gt${tileColor(name)||(id===""?`" style="border-left-width:1px`:`" style="border-left-color:hsl(${h} 45% 45%)`)}" data-genre="${esc(id)}"><span class="gn">${esc(name)}</span><span class="m">${n} book${n==1?"":"s"}</span><span class="m">${o} owned</span><span class="m">${r} read</span></button>`;
   const sp=(id,name,n,h)=>`<button class="gt${tileColor(name)}" data-genre="${id}"><span class="gn">${name}</span><span class="m">${n} book${n==1?"":"s"}</span></button>`;
   $("lists").innerHTML=sp("__wishlist","Wishlist",books.filter(b=>b.wishlist).length,340)+sp("__tbr","TBR",books.filter(b=>b.tbr).length,200);
   $("hcnt").textContent=books.length?`${books.length} book${books.length==1?"":"s"} in ${gl.length} genre${gl.length==1?"":"s"}`:"";
@@ -223,7 +223,7 @@ function renderHome(){
     :'<p class="m">No books yet. Use “+ Add book” or “Import CSV” to get started.</p>';
 }
 function render(){renderHome();renderList()}
-let special=null;
+let special=null,filtersHidden=false;try{filtersHidden=localStorage.getItem("filtersHidden")==="1"}catch(e){}
 function go(g,push,fresh,ser){
   const home=g===null;
   if(home)special=null;
@@ -242,14 +242,14 @@ window.addEventListener("popstate",e=>{const s=e.state;go(s&&s.v==="list"?s.g:nu
 function seriesMode(){const g=$("fg").value;return!!g&&!special&&$("fs").value===""&&books.some(b=>b.genre_id==g&&b.series_id)}
 function renderSeriesBtns(){
   const g=$("fg").value,box=$("sbtns"),wrap=$("sbox"),on=seriesMode();
-  $("fbar").hidden=on;wrap.hidden=!on;$("cnt").hidden=on;$("list").hidden=on;
+  $("fbar").hidden=on||filtersHidden;$("ftog").hidden=on;$("ftog").textContent=filtersHidden?"Show filters":"Hide filters";$("ftog").setAttribute("aria-expanded",String(!filtersHidden));wrap.hidden=!on;$("cnt").hidden=on;$("list").hidden=on;
   $("back").textContent=(g&&!special&&$("fs").value!==""&&books.some(b=>b.genre_id==g&&b.series_id))?"← "+G(g).name:"← Home";
   if(!on){box.innerHTML="";return}
   const by={};let alone={n:0,o:0,r:0};
   books.filter(b=>b.genre_id==g).forEach(b=>{const x=b.series_id?(by[b.series_id]??={n:0,o:0,r:0}):alone;x.n++;if(b.owned)x.o++;if(b.read)x.r++});
   const ids=Object.keys(by).sort((x,y)=>S(x).name.localeCompare(S(y).name));
-  const t=(v,l,x,h)=>`<button class="gt" data-ser="${esc(v)}" style="border-left-color:hsl(${h} 45% 45%)"><span class="gn">${esc(l)}</span><span class="m">${x.n} book${x.n==1?"":"s"} · ${x.o} owned · ${x.r} read</span></button>`;
-  box.innerHTML=ids.map(i=>t(i,S(i).name,by[i],hue(i))).join("")+(alone.n?t("__s","Standalone",alone,0):"");
+  const gc=tileColor(G(g).name)||`" style="border-left-color:hsl(${hue(g)} 45% 45%)`,t=(v,l,x)=>`<button class="gt${gc}" data-ser="${esc(v)}"><span class="gn">${esc(l)}</span><span class="m">${x.n} book${x.n==1?"":"s"}</span><span class="m">${x.o} owned</span><span class="m">${x.r} read</span></button>`;
+  box.innerHTML=ids.map(i=>t(i,S(i).name,by[i])).join("")+(alone.n?t("__s","Standalone",alone):"");
 }
 function renderList(){
   renderSeriesBtns();if(seriesMode()){$("ltitle").textContent=G($("fg").value).name;return}
@@ -513,6 +513,7 @@ document.addEventListener("error",e=>{const t=e.target;if(!t||t.tagName!=="IMG")
 /* ---------- events ---------- */
 document.addEventListener("click",async e=>{
   const t=e.target.closest("button");if(!t)return;
+  if(t.id=="ftog"){filtersHidden=!filtersHidden;try{localStorage.setItem("filtersHidden",filtersHidden?"1":"0")}catch(e){}render();return}
   if(t.dataset.ser!==undefined){go($("fg").value,true,false,t.dataset.ser);return}
   if(t.dataset.genre!==undefined){go(t.dataset.genre,true,true);return}
   if(t.id=="back"){if(history.state&&history.state.v==="list")history.back();else go(null,false);return}
