@@ -3,8 +3,8 @@
 <title>Reading List</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{--bg:#faf7f2;--fg:#2a2622;--mut:#7a7168;--card:#fff;--bd:#e4ddd2;--ok:#2f7d4f;--okbg:#e3f3e9;--ac:#8a4b2a;--er:#c0392b;--yw:#fdf3c8;--ywb:#e3cf86;--gn:#dcf1e1;--gnb:#9fcfae;--bl:#d9e7fa;--blb:#9db8e0;--or:#fbdcb8;--orb:#e8b27c}
-@media(prefers-color-scheme:dark){:root{--bg:#1b1917;--fg:#eee8df;--mut:#a39a8e;--card:#262321;--bd:#3a3531;--ok:#6fcf97;--okbg:#1f3a2a;--ac:#e0a47e;--er:#ff8a7a;--yw:#3a3316;--ywb:#6e5f2a;--gn:#1d3a29;--gnb:#2f6a46;--bl:#1b2c45;--blb:#33507a;--or:#4a3319;--orb:#7a5530}}
+:root{--bg:#faf7f2;--fg:#2a2622;--mut:#7a7168;--card:#fff;--bd:#e4ddd2;--ok:#2f7d4f;--okbg:#e3f3e9;--ac:#8a4b2a;--er:#c0392b;--yw:#fdf3c8;--ywb:#e3cf86;--gn:#dcf1e1;--gnb:#9fcfae;--bl:#e8f1fd;--blb:#b6cdee;--or:#fbdcb8;--orb:#e8b27c}
+@media(prefers-color-scheme:dark){:root{--bg:#1b1917;--fg:#eee8df;--mut:#a39a8e;--card:#262321;--bd:#3a3531;--ok:#6fcf97;--okbg:#1f3a2a;--ac:#e0a47e;--er:#ff8a7a;--yw:#3a3316;--ywb:#6e5f2a;--gn:#1d3a29;--gnb:#2f6a46;--bl:#23395c;--blb:#41649a;--or:#4a3319;--orb:#7a5530}}
 *{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}
 body{background:var(--bg);color:var(--fg);font:15px/1.4 Georgia,'Times New Roman',serif;padding:12px 14px 40px;max-width:900px;margin:auto}
 h1{font-size:22px;margin:4px 0 10px}h2{font-size:17px;margin:20px 0 8px;color:var(--ac)}
@@ -98,7 +98,7 @@ async function onSession(s){
   history.replaceState({v:"home",g:null},"");go(null,false);
 }
 // Diagnostic line (safe to show: it reveals only the project address and the start of the public key)
-try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v27`}
+try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v28`}
 catch(e){$("diag").textContent=`Check: the Supabase address is not a valid web address (${JSON.stringify(SUPABASE_URL)}) · app v4`}
 if(SUPABASE_URL.startsWith("YOUR_")){showLogin("Set SUPABASE_URL and SUPABASE_ANON_KEY at the top of index.html.");$("gin").hidden=true}
 else if(!window.supabase){showLogin("Could not load the Supabase library. Check your connection.");$("gin").hidden=true}
