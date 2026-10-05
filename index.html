@@ -27,8 +27,7 @@ textarea{width:100%;min-height:70px}
 .cg{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;margin:10px 0}
 .ci{display:flex;flex-direction:column;gap:3px;padding:4px;text-align:left;font-size:11px;color:var(--mut)}
 .ci img{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:4px;background:var(--bd)}
-.rh{margin:16px 0 6px;font-size:15px}.rg{display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:8px}.rc{display:flex;flex-direction:column;gap:3px;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:8px;font-size:12px}.rc .cov{flex:none;width:100%;height:auto;aspect-ratio:2/3;font-size:11px}.rc .rt{font-weight:bold;font-size:13px}.rc .tg button{font-size:11px;padding:4px 6px}
-.sb{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 12px}.sb button{padding:6px 10px;font-size:13px;border-radius:999px}.sb button[aria-pressed=true]{border-color:var(--ac);font-weight:bold;box-shadow:inset 0 0 0 1px var(--ac)}
+.sbt.on{box-shadow:inset 0 0 0 2px var(--ac)}
 .gg{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
 .gt{display:flex;flex-direction:column;gap:4px;padding:16px 12px;text-align:left;border-radius:12px;border-left:6px solid var(--ac)}
 .gt .gn{font-size:16px;font-weight:bold}.gt.c{border-left-color:var(--tr)}
@@ -53,15 +52,11 @@ textarea{width:100%;min-height:70px}
 <h2 style="margin-top:14px">Genres</h2>
 <div class="cnt" id="hcnt"></div>
 <div class="gg" id="genres"></div>
-<div class="bar" id="rbar" hidden style="margin-top:22px;justify-content:space-between"><h2 style="margin:0">Recommended for you</h2><button id="rref">↻ Refresh</button></div>
-<p class="m" id="rnote" style="margin:4px 0 0">Five suggestions per genre, based on the authors you collect most. Books already in your list are left out.</p>
-<div id="recs"></div>
 </div>
 
 <div id="listview" hidden>
 <div class="bar"><button id="back">← Home</button><button id="ad2" data-act="ad">+ Add book</button></div>
 <h2 id="ltitle" style="margin-top:6px"></h2>
-<div class="sb" id="sbtns" hidden></div>
 <div class="bar">
 <input type="search" id="q" placeholder="Search title, author, series, genre" aria-label="Search">
 <select id="fg" aria-label="Genre"></select><select id="fa" aria-label="Author"></select><select id="fs" aria-label="Series"></select>
@@ -70,6 +65,7 @@ textarea{width:100%;min-height:70px}
 <select id="so" aria-label="Sort"></select>
 <button id="gv" aria-pressed="true">Group by series</button>
 </div>
+<div id="sbox" hidden><h2 style="margin-top:6px">Series</h2><div class="gg" id="sbtns"></div></div>
 <div class="cnt" id="cnt"></div><div id="list"></div>
 </div>
 </div>
@@ -101,7 +97,7 @@ async function onSession(s){
   history.replaceState({v:"home",g:null},"");go(null,false);
 }
 // Diagnostic line (safe to show: it reveals only the project address and the start of the public key)
-try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v19`}
+try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v20`}
 catch(e){$("diag").textContent=`Check: the Supabase address is not a valid web address (${JSON.stringify(SUPABASE_URL)}) · app v4`}
 if(SUPABASE_URL.startsWith("YOUR_")){showLogin("Set SUPABASE_URL and SUPABASE_ANON_KEY at the top of index.html.");$("gin").hidden=true}
 else if(!window.supabase){showLogin("Could not load the Supabase library. Check your connection.");$("gin").hidden=true}
@@ -225,7 +221,7 @@ function renderHome(){
     ?tile("","All books",books.length,books.filter(b=>b.read).length,30)+gl.map(g=>tile(g.genre_id,g.name,by[g.genre_id].n,by[g.genre_id].r,hue(g.genre_id))).join("")
     :'<p class="m">No books yet. Use “+ Add book” or “Import CSV” to get started.</p>';
 }
-function render(){renderHome();renderList();renderRecs();if(books.length&&!recBusy&&genres.some(g=>!recs[g.genre_id]&&books.some(b=>b.genre_id==g.genre_id)))loadRecs()}
+function render(){renderHome();renderList()}
 let special=null;
 function go(g,push,fresh){
   const home=g===null;
@@ -241,15 +237,15 @@ function go(g,push,fresh){
 }
 window.addEventListener("popstate",e=>{const s=e.state;go(s&&s.v==="list"?s.g:null,false)});
 function renderSeriesBtns(){
-  const g=$("fg").value,box=$("sbtns");
-  if(!g||special){box.hidden=true;box.innerHTML="";return}
+  const g=$("fg").value,box=$("sbtns"),wrap=$("sbox");
+  if(!g||special){wrap.hidden=true;box.innerHTML="";return}
   const gb=books.filter(b=>b.genre_id==g),by={};let alone=0;
   gb.forEach(b=>{if(b.series_id)by[b.series_id]=(by[b.series_id]||0)+1;else alone++});
   const ids=Object.keys(by).sort((x,y)=>S(x).name.localeCompare(S(y).name));
-  if(!ids.length){box.hidden=true;box.innerHTML="";return}
-  const cur=$("fs").value,b=(v,l,n)=>`<button data-ser="${esc(v)}" aria-pressed="${cur===v}">${esc(l)} <span class="m">${n}</span></button>`;
-  box.hidden=false;
-  box.innerHTML=b("","All",gb.length)+ids.map(i=>b(i,S(i).name,by[i])).join("")+(alone?b("__s","Standalone",alone):"");
+  if(!ids.length){wrap.hidden=true;box.innerHTML="";return}
+  const cur=$("fs").value,t=(v,l,n,h)=>`<button class="gt sbt${cur===v?" on":""}" data-ser="${esc(v)}" aria-pressed="${cur===v}" style="border-left-color:hsl(${h} 45% 45%)"><span class="gn">${esc(l)}</span><span class="m">${n} book${n==1?"":"s"}</span></button>`;
+  wrap.hidden=false;
+  box.innerHTML=t("","All in this genre",gb.length,30)+ids.map(i=>t(i,S(i).name,by[i],hue(i))).join("")+(alone?t("__s","Standalone",alone,0):"");
 }
 function renderList(){
   renderSeriesBtns();
@@ -480,93 +476,10 @@ document.addEventListener("error",e=>{const t=e.target;if(!t||t.tagName!=="IMG")
   const ci=t.closest(".ci");if(ci){ci.remove();return}
   if(t.classList.contains("cim")){const p=t.parentElement;p.classList.remove("has");p.textContent="[Book Cover Unavailable]"}},true);
 
-/* ---------- recommendations ---------- */
-// For each genre: find the authors you collect most (read books count double), look up their other works on Open Library,
-// then fill up from that genre's popular books. Books already in your list are never suggested.
-const RSUBJ=[[/sci|science/i,"science_fiction"],[/horror/i,"horror"],[/murder|mystery|crime|detective/i,"mystery_and_detective_stories"],[/romantasy|fantasy/i,"fantasy"],
-  [/romance/i,"romance"],[/classic/i,"classic_literature"],[/comic|manga/i,"comics"],[/child|kid|juvenile/i,"juvenile_fiction"],[/action|adventure/i,"adventure"]];
-const rsub=n=>{const m=RSUBJ.find(x=>x[0].test(n));return m?m[1]:String(n).trim().toLowerCase().replace(/[^a-z0-9]+/g,"_")};
-const nT=t=>String(t||"").toLowerCase().replace(/[:(\[].*$/,"").replace(/&/g," and ").replace(/[^a-z0-9]+/g," ").trim().replace(/^(the|a|an) /,"");
-const nA=t=>String(t||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
-const RJUNK=/box(ed)? set|omnibus|collection|complete |anthology|study guide|summary|sparknotes|cliffs?notes|analysis|trivia|companion|illustrated|\bvol(ume)?\.? \d|books? \d+-\d+|bundle|collector/i;
-const recs={};let recBusy=false,recSeq=0;
-const rcache={get(k){try{const v=JSON.parse(localStorage.getItem("recs1_"+k));return v&&Date.now()-v.t<6048e5?v.d:null}catch(e){return null}},set(k,d){try{localStorage.setItem("recs1_"+k,JSON.stringify({t:Date.now(),d}))}catch(e){}}};
-async function olj(u){const r=await fetch(u);if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}
-async function recsFor(g){
-  const am={};books.filter(b=>b.genre_id==g.genre_id).forEach(b=>{const x=(am[b.author_id]??={name:A(b.author_id).name,s:0,n:0});x.n++;x.s+=b.read?2:b.owned?1.5:1});
-  const top=Object.values(am).sort((x,y)=>y.s-x.s).slice(0,3);
-  const sig=top.map(a=>a.name+a.n).join("|");const ck=g.genre_id+"|"+sig;const hit=rcache.get(ck);if(hit)return hit;
-  const lists=[];
-  for(const a of top){
-    try{
-      const j=await olj(`${OL}/search.json?author=${encodeURIComponent(a.name)}&language=eng&sort=rating&limit=40&fields=key,title,author_name,first_publish_year,cover_i`);
-      const seen=new Set(),items=[];
-      for(const d of j.docs||[]){
-        if(!d.title||RJUNK.test(d.title)||!(d.author_name||[]).some(n=>nA(n)==nA(a.name)))continue;
-        const k=nT(d.title);if(!k||seen.has(k))continue;seen.add(k);
-        items.push({title:d.title,author:a.name,year:d.first_publish_year||null,cover:d.cover_i||null,why:`You have ${a.n} book${a.n==1?"":"s"} by ${a.name}`});
-      }
-      lists.push(items);
-    }catch(e){}
-  }
-  const out=[],used=new Set();
-  const add=x=>{const k=nT(x.title);if(used.has(k))return;used.add(k);out.push(x)};
-  for(let i=0;i<12;i++)lists.forEach(l=>{if(l[i])add(l[i])});
-  if(out.length<12){
-    try{
-      const j=await olj(`${OL}/subjects/${rsub(g.name)}.json?limit=40`);
-      for(const w of j.works||[]){
-        if(!w.title||RJUNK.test(w.title))continue;
-        const au=(w.authors&&w.authors[0]&&w.authors[0].name)||"";if(!au)continue;
-        add({title:w.title,author:au,year:w.first_publish_year||null,cover:w.cover_id||null,why:`Popular in ${g.name}`});
-      }
-    }catch(e){}
-  }
-  if(out.length)rcache.set(ck,out);
-  return out;
-}
-async function loadRecs(force){
-  if(recBusy)return;recBusy=true;
-  try{
-    const gl=genres.filter(g=>books.some(b=>b.genre_id==g.genre_id)).sort((x,y)=>x.name.localeCompare(y.name));
-    const todo=gl.filter(g=>force||!recs[g.genre_id]);
-    if(force){try{Object.keys(localStorage).filter(k=>k.startsWith("recs1_")).forEach(k=>localStorage.removeItem(k))}catch(e){}}
-    todo.forEach(g=>recs[g.genre_id]={status:"loading",items:[]});renderRecs();
-    for(let i=0;i<todo.length;i+=2){
-      await Promise.all(todo.slice(i,i+2).map(async g=>{
-        try{const it=await recsFor(g);recs[g.genre_id]={status:"done",items:it}}catch(e){recs[g.genre_id]={status:"err",items:[]}}
-        renderRecs();
-      }));
-    }
-  }finally{recBusy=false}
-}
-function renderRecs(){
-  const box=$("recs");if(!box)return;
-  const have=new Set(books.map(b=>nT(b.title)));
-  const shown=new Set();
-  const gl=genres.filter(g=>recs[g.genre_id]).sort((x,y)=>x.name.localeCompare(y.name));
-  $("rbar").hidden=!gl.length;
-  box.innerHTML=gl.map(g=>{
-    const r=recs[g.genre_id];
-    const it=r.items.filter(x=>!have.has(nT(x.title))&&!shown.has(nT(x.title))).slice(0,5);
-    it.forEach(x=>shown.add(nT(x.title)));
-    const body=r.status=="loading"?'<p class="m">Finding books…</p>':r.status=="err"||!it.length?'<p class="m">No recommendations found right now.</p>'
-      :`<div class="rg">${it.map(x=>`<div class="rc"><div class="cov${x.cover?" has":""}" style="background:hsl(${hue(x.title)} 35% 38%)">${x.cover?`<img class="cim" src="${esc(olImg(x.cover,"M"))}" alt="Cover of ${esc(x.title)}" loading="lazy" referrerpolicy="no-referrer">`:"[Book Cover Unavailable]"}</div><div class="rt">${esc(x.title)}</div><div class="m">${esc(x.author)}${x.year?` · ${x.year}`:""}</div><div class="m">${esc(x.why)}</div><div class="tg"><button data-rw="${esc(g.genre_id)}|${esc(x.title)}" data-k="wishlist">♡ Wishlist</button><button data-rw="${esc(g.genre_id)}|${esc(x.title)}" data-k="tbr">+ TBR</button></div></div>`).join("")}</div>`;
-    return`<h3 class="rh">${esc(g.name)}</h3>${body}`}).join("");
-}
-async function addRec(gid,title,k){
-  const g=G(gid),r=recs[gid],x=r&&r.items.find(i=>i.title===title);if(!x)return;
-  try{await put({title:x.title,author:x.author,genre:g.name,publication_year:x.year?String(x.year):"",owned:false,read:false,[k]:true});msg("")}
-  catch(e){msg("Could not add: "+e.message);return}
-  render();
-}
-
 /* ---------- events ---------- */
 document.addEventListener("click",async e=>{
   const t=e.target.closest("button");if(!t)return;
-  if(t.dataset.rw){const [gid,...tt]=t.dataset.rw.split("|");t.disabled=true;await addRec(gid,tt.join("|"),t.dataset.k);return}
   if(t.dataset.ser!==undefined){$("fs").value=t.dataset.ser;render();return}
-  if(t.id=="rref"){loadRecs(true);return}
   if(t.dataset.genre!==undefined){go(t.dataset.genre,true,true);return}
   if(t.id=="back"){if(history.state&&history.state.v==="list")history.back();else go(null,false);return}
   if(t.dataset.open)return detail(t.dataset.open);
