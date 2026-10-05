@@ -27,7 +27,6 @@ textarea{width:100%;min-height:70px}
 .cg{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;margin:10px 0}
 .ci{display:flex;flex-direction:column;gap:3px;padding:4px;text-align:left;font-size:11px;color:var(--mut)}
 .ci img{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:4px;background:var(--bd)}
-.sbt.on{box-shadow:inset 0 0 0 2px var(--ac)}
 .gg{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
 .gt{display:flex;flex-direction:column;gap:4px;padding:16px 12px;text-align:left;border-radius:12px;border-left:6px solid var(--ac)}
 .gt .gn{font-size:16px;font-weight:bold}.gt.c{border-left-color:var(--tr)}
@@ -57,6 +56,8 @@ textarea{width:100%;min-height:70px}
 <div id="listview" hidden>
 <div class="bar"><button id="back">← Home</button><button id="ad2" data-act="ad">+ Add book</button></div>
 <h2 id="ltitle" style="margin-top:6px"></h2>
+<div id="sbox" hidden><div class="gg" id="sbtns"></div></div>
+<div id="fbar">
 <div class="bar">
 <input type="search" id="q" placeholder="Search title, author, series, genre" aria-label="Search">
 <select id="fg" aria-label="Genre"></select><select id="fa" aria-label="Author"></select><select id="fs" aria-label="Series"></select>
@@ -65,7 +66,7 @@ textarea{width:100%;min-height:70px}
 <select id="so" aria-label="Sort"></select>
 <button id="gv" aria-pressed="true">Group by series</button>
 </div>
-<div id="sbox" hidden><h2 style="margin-top:6px">Series</h2><div class="gg" id="sbtns"></div></div>
+</div>
 <div class="cnt" id="cnt"></div><div id="list"></div>
 </div>
 </div>
@@ -97,7 +98,7 @@ async function onSession(s){
   history.replaceState({v:"home",g:null},"");go(null,false);
 }
 // Diagnostic line (safe to show: it reveals only the project address and the start of the public key)
-try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v21`}
+try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v22`}
 catch(e){$("diag").textContent=`Check: the Supabase address is not a valid web address (${JSON.stringify(SUPABASE_URL)}) · app v4`}
 if(SUPABASE_URL.startsWith("YOUR_")){showLogin("Set SUPABASE_URL and SUPABASE_ANON_KEY at the top of index.html.");$("gin").hidden=true}
 else if(!window.supabase){showLogin("Could not load the Supabase library. Check your connection.");$("gin").hidden=true}
@@ -211,19 +212,19 @@ const TILE={wishlist:["#cfe0f7","#8fb1e0","#1d2b3f"],tbr:["#c9ece8","#86c9c2","#
 const ALIAS={"action & adventure":"action/adventure","action and adventure":"action/adventure","action adventure":"action/adventure","childhood":"childhood books","comics":"comics/manga","manga":"comics/manga","comics & manga":"comics/manga","murder mysteries":"murder mystery","mystery":"murder mystery","sci fi":"sci-fi","scifi":"sci-fi","science fiction":"sci-fi","sf":"sci-fi","classic":"classics"};
 function tileColor(name){const k=String(name).trim().toLowerCase(),c=TILE[ALIAS[k]||k];return c?` c" style="--tb:${c[0]};--tr:${c[1]};--tc:${c[2]}`:""}
 function renderHome(){
-  const by={};books.forEach(b=>{const x=(by[b.genre_id]??={n:0,r:0});x.n++;if(b.read)x.r++});
+  const by={};books.forEach(b=>{const x=(by[b.genre_id]??={n:0,r:0,o:0});x.n++;if(b.read)x.r++;if(b.owned)x.o++});
   const gl=genres.filter(g=>by[g.genre_id]).sort((x,y)=>x.name.localeCompare(y.name));
-  const tile=(id,name,n,r,h)=>`<button class="gt${tileColor(name)||(id===""?`" style="border-left-width:1px`:`" style="border-left-color:hsl(${h} 45% 45%)`)}" data-genre="${esc(id)}"><span class="gn">${esc(name)}</span><span class="m">${n} book${n==1?"":"s"} · ${r} read</span></button>`;
+  const tile=(id,name,n,r,h,o)=>`<button class="gt${tileColor(name)||(id===""?`" style="border-left-width:1px`:`" style="border-left-color:hsl(${h} 45% 45%)`)}" data-genre="${esc(id)}"><span class="gn">${esc(name)}</span><span class="m">${n} book${n==1?"":"s"} · ${o} owned · ${r} read</span></button>`;
   const sp=(id,name,n,h)=>`<button class="gt${tileColor(name)}" data-genre="${id}"><span class="gn">${name}</span><span class="m">${n} book${n==1?"":"s"}</span></button>`;
   $("lists").innerHTML=sp("__wishlist","Wishlist",books.filter(b=>b.wishlist).length,340)+sp("__tbr","TBR",books.filter(b=>b.tbr).length,200);
   $("hcnt").textContent=books.length?`${books.length} book${books.length==1?"":"s"} in ${gl.length} genre${gl.length==1?"":"s"}`:"";
   $("genres").innerHTML=books.length
-    ?tile("","All books",books.length,books.filter(b=>b.read).length,30)+gl.map(g=>tile(g.genre_id,g.name,by[g.genre_id].n,by[g.genre_id].r,hue(g.genre_id))).join("")
+    ?tile("","All books",books.length,books.filter(b=>b.read).length,30,books.filter(b=>b.owned).length)+gl.map(g=>tile(g.genre_id,g.name,by[g.genre_id].n,by[g.genre_id].r,hue(g.genre_id),by[g.genre_id].o)).join("")
     :'<p class="m">No books yet. Use “+ Add book” or “Import CSV” to get started.</p>';
 }
 function render(){renderHome();renderList()}
 let special=null;
-function go(g,push,fresh){
+function go(g,push,fresh,ser){
   const home=g===null;
   if(home)special=null;
   if(!home){
@@ -231,25 +232,28 @@ function go(g,push,fresh){
     special=g=="__wishlist"||g=="__tbr"?g.slice(2):null;
     $("fg").value=special?"":g;if(!special&&$("fg").value!==g)$("fg").value="";
   }
+  if(!home)$("fs").value=ser||"";
   $("home").hidden=!home;$("listview").hidden=home;
-  if(push)history.pushState({v:home?"home":"list",g},"");
+  if(push)history.pushState({v:home?"home":"list",g,s:ser||""},"");
   render();window.scrollTo(0,0);
 }
-window.addEventListener("popstate",e=>{const s=e.state;go(s&&s.v==="list"?s.g:null,false)});
+window.addEventListener("popstate",e=>{const s=e.state;go(s&&s.v==="list"?s.g:null,false,false,s&&s.s)});
+// a genre that has series shows one tile per series (plus Standalone); a tile opens its own page of books
+function seriesMode(){const g=$("fg").value;return!!g&&!special&&$("fs").value===""&&books.some(b=>b.genre_id==g&&b.series_id)}
 function renderSeriesBtns(){
-  const g=$("fg").value,box=$("sbtns"),wrap=$("sbox");
-  if(!g||special){wrap.hidden=true;box.innerHTML="";return}
-  const gb=books.filter(b=>b.genre_id==g),by={};let alone=0;
-  gb.forEach(b=>{if(b.series_id)by[b.series_id]=(by[b.series_id]||0)+1;else alone++});
+  const g=$("fg").value,box=$("sbtns"),wrap=$("sbox"),on=seriesMode();
+  $("fbar").hidden=on;wrap.hidden=!on;$("cnt").hidden=on;$("list").hidden=on;
+  $("back").textContent=(g&&!special&&$("fs").value!==""&&books.some(b=>b.genre_id==g&&b.series_id))?"← "+G(g).name:"← Home";
+  if(!on){box.innerHTML="";return}
+  const by={};let alone={n:0,o:0,r:0};
+  books.filter(b=>b.genre_id==g).forEach(b=>{const x=b.series_id?(by[b.series_id]??={n:0,o:0,r:0}):alone;x.n++;if(b.owned)x.o++;if(b.read)x.r++});
   const ids=Object.keys(by).sort((x,y)=>S(x).name.localeCompare(S(y).name));
-  if(!ids.length){wrap.hidden=true;box.innerHTML="";return}
-  const cur=$("fs").value,t=(v,l,n,h)=>`<button class="gt sbt${cur===v?" on":""}" data-ser="${esc(v)}" aria-pressed="${cur===v}" style="border-left-color:hsl(${h} 45% 45%)"><span class="gn">${esc(l)}</span><span class="m">${n} book${n==1?"":"s"}</span></button>`;
-  wrap.hidden=false;
-  box.innerHTML=t("","All in this genre",gb.length,30)+ids.map(i=>t(i,S(i).name,by[i],hue(i))).join("")+(alone?t("__s","Standalone",alone,0):"");
+  const t=(v,l,x,h)=>`<button class="gt" data-ser="${esc(v)}" style="border-left-color:hsl(${h} 45% 45%)"><span class="gn">${esc(l)}</span><span class="m">${x.n} book${x.n==1?"":"s"} · ${x.o} owned · ${x.r} read</span></button>`;
+  box.innerHTML=ids.map(i=>t(i,S(i).name,by[i],hue(i))).join("")+(alone.n?t("__s","Standalone",alone,0):"");
 }
 function renderList(){
-  renderSeriesBtns();
-  $("ltitle").textContent=special=="wishlist"?"Wishlist":special=="tbr"?"To be read (TBR)":$("fg").value?G($("fg").value).name:"All books";
+  renderSeriesBtns();if(seriesMode()){$("ltitle").textContent=G($("fg").value).name;return}
+  $("ltitle").textContent=special=="wishlist"?"Wishlist":special=="tbr"?"To be read (TBR)":$("fg").value?G($("fg").value).name+($("fs").value?" › "+($("fs").value=="__s"?"Standalone":(S($("fs").value)||{}).name||""):""):"All books";
   const q=$("q").value.toLowerCase(),g=$("fg").value,a=$("fa").value,s=$("fs").value,o=$("fo").value,r=$("fr").value,k=$("so").value;
   const l=books.filter(b=>{
     if(special&&!b[special])return false;
@@ -509,7 +513,7 @@ document.addEventListener("error",e=>{const t=e.target;if(!t||t.tagName!=="IMG")
 /* ---------- events ---------- */
 document.addEventListener("click",async e=>{
   const t=e.target.closest("button");if(!t)return;
-  if(t.dataset.ser!==undefined){$("fs").value=t.dataset.ser;render();return}
+  if(t.dataset.ser!==undefined){go($("fg").value,true,false,t.dataset.ser);return}
   if(t.dataset.genre!==undefined){go(t.dataset.genre,true,true);return}
   if(t.id=="back"){if(history.state&&history.state.v==="list")history.back();else go(null,false);return}
   if(t.dataset.open)return detail(t.dataset.open);
