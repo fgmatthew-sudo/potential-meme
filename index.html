@@ -97,7 +97,7 @@ async function onSession(s){
   history.replaceState({v:"home",g:null},"");go(null,false);
 }
 // Diagnostic line (safe to show: it reveals only the project address and the start of the public key)
-try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v20`}
+try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v21`}
 catch(e){$("diag").textContent=`Check: the Supabase address is not a valid web address (${JSON.stringify(SUPABASE_URL)}) · app v4`}
 if(SUPABASE_URL.startsWith("YOUR_")){showLogin("Set SUPABASE_URL and SUPABASE_ANON_KEY at the top of index.html.");$("gin").hidden=true}
 else if(!window.supabase){showLogin("Could not load the Supabase library. Check your connection.");$("gin").hidden=true}
@@ -311,11 +311,13 @@ function toForm(b){return{title:b.title,subtitle:b.subtitle,author:A(b.author_id
 function norm(d){const n=v=>{v=num(v);return v==null?null:v};
   return JSON.stringify([String(d.title).trim(),nz(d.subtitle),String(d.author).trim().toLowerCase(),String(d.genre).trim().toLowerCase(),(nz(d.series)||"").toLowerCase(),
     n(d.reading_order),n(d.publication_order),nz(d.publication_year),nz(d.description),nz(d.notes),!!d.owned,!!d.read])}
-async function doImport(t,out){
+async function doImport(t,out,prune_missing){
   const rows=parseCSV(t.replace(/^﻿/,""));if(rows.length<2)return"No data rows found.";
   const h=rows[0].map(x=>x.trim().toLowerCase()),miss=["title","author","genre"].filter(c=>!h.includes(c));
   if(miss.length)return"Missing required column(s): "+miss.join(", ");
-  let added=0,updated=0,same=0;const err=[],again=[],touched=new Set();
+  const low=x=>String(x||"").trim().toLowerCase(),fileKeys=new Set();
+  if(h.includes("series")){const ti=h.indexOf("title"),ai=h.indexOf("author"),si=h.indexOf("series");for(let i=1;i<rows.length;i++)fileKeys.add([low(rows[i][ti]),low(rows[i][ai]),low(rows[i][si])].join("|"))}
+  let added=0,updated=0,same=0,moved=0;const err=[],again=[],touched=new Set();
   for(let i=1;i<rows.length;i++){
     const r=rows[i],raw={};h.forEach((c,j)=>{if(c)raw[c]=r[j]});
     // legacy column name: accept publication_date but keep only the year
@@ -331,7 +333,13 @@ async function doImport(t,out){
       // a book is "the same" only if title, author AND series all match, so "Volume 1" of two series stays two books
       const T=raw.title.trim().toLowerCase(),Au=raw.author.trim().toLowerCase();
       let c=books.filter(b=>b.title.toLowerCase()==T&&A(b.author_id).name.toLowerCase()==Au);
-      if(h.includes("series")){const sn=(nz(raw.series)||"").toLowerCase();c=c.filter(b=>(b.series_id?S(b.series_id).name.toLowerCase():"")==sn)}
+      if(h.includes("series")){const sn=(nz(raw.series)||"").toLowerCase(),all=c;c=c.filter(b=>(b.series_id?S(b.series_id).name.toLowerCase():"")==sn);
+        // no exact match: the series was probably renamed. Reuse the same title + author if it is unambiguous and its old series is not used by another row of this file
+        if(!c.length){
+          let f=all.filter(b=>!touched.has(b.book_id)&&!fileKeys.has([T,Au,b.series_id?S(b.series_id).name.toLowerCase():""].join("|")));
+          if(f.length>1){const ro=num(raw.reading_order);if(ro!=null&&!isNaN(ro)){const g=f.filter(b=>b.reading_order==ro);if(g.length)f=g}}
+          if(f.length==1){c=f;moved++}
+        }}
       else if(c.length>1){err.push(`Row ${i+1}: "${raw.title.trim()}" exists in more than one series. Add a series column (or book_id) so I know which one.`);continue}
       ex=c[0]||null;
     }
@@ -346,15 +354,37 @@ async function doImport(t,out){
     out.textContent=`Importing ${i} of ${rows.length-1}…`;
     try{const nb=await put(d,ex||undefined);touched.add(nb.book_id);ex?updated++:added++}catch(x){err.push(`Row ${i+1}: ${x.message}`)}
   }
+  let removed=0,merged=0;
+  if(prune_missing&&!err.length){
+    const stale=books.filter(b=>!touched.has(b.book_id));
+    if(stale.length&&confirm(`${stale.length} book${stale.length==1?"":"s"} in your list ${stale.length==1?"is":"are"} not in this file. Remove ${stale.length==1?"it":"them"}? (Covers, notes and wishlist/TBR marks are copied to the matching book first.)`)){
+      for(const o of stale){
+        out.textContent=`Cleaning up… ${removed+1} of ${stale.length}`;
+        try{
+          const n=books.find(b=>b.book_id!=o.book_id&&touched.has(b.book_id)&&b.title.toLowerCase()==o.title.toLowerCase()&&b.author_id==o.author_id);
+          if(n){
+            const patch={};
+            if(o.cover_id&&!n.cover_id){const r=await sb.from("book_covers").update({book_id:n.book_id}).eq("cover_id",o.cover_id);if(!r.error){patch.cover_id=o.cover_id;const cv=covers.find(x=>x.cover_id==o.cover_id);if(cv)cv.book_id=n.book_id;o.cover_id=null}}
+            if(o.notes&&!n.notes)patch.notes=o.notes;
+            if(o.wishlist&&!n.wishlist)patch.wishlist=true;
+            if(o.tbr&&!n.tbr)patch.tbr=true;
+            if(Object.keys(patch).length){await upd(n,patch);merged++}
+          }
+          const r=await sb.from("books").delete().eq("book_id",o.book_id);if(r.error)throw r.error;
+          books=books.filter(b=>b.book_id!=o.book_id);covers=covers.filter(x=>x.book_id!=o.book_id);removed++;
+        }catch(x){err.push(`Could not remove "${o.title}": ${x.message}`)}
+      }
+    }
+  }
   await prune();
   const list=(arr,label)=>arr.length?`<p class="m"><strong>${label}</strong></p><ul>`+arr.slice(0,10).map(x=>`<li>${esc(x)}</li>`).join("")+(arr.length>10?`<li>…and ${arr.length-10} more</li>`:"")+"</ul>":"";
-  return`${rows.length-1} rows read: <strong>${added} added</strong>, ${updated} updated, ${same} unchanged, ${again.length} repeated within the file, ${err.length} invalid.`+list(again,"Repeated rows (skipped, the first one was used):")+list(err,"Invalid rows (skipped):");
+  return`${rows.length-1} rows read: <strong>${added} added</strong>, ${updated} updated, ${same} unchanged, ${again.length} repeated within the file, ${err.length} invalid.`+(moved?` ${moved} of the updated books had a changed series name and were matched by title + author.`:"")+(prune_missing?` ${removed} old book${removed==1?"":"s"} removed${merged?` (${merged} had a cover, note or list mark copied over)`:""}.`:"")+list(again,"Repeated rows (skipped, the first one was used):")+list(err,"Invalid rows (skipped):");
 }
 function imp(){
-  const d=$("im");d.innerHTML=`<h2 style="margin-top:0">Import CSV</h2><p class="m">Required columns: title, author, genre. Optional: subtitle, series, reading_order (also used as the series order), publication_order, publication_year, owned, read, notes, description, book_id. A book that already exists (matched by book_id, or by title + author + series) is <strong>updated</strong> with the values in the file; a column that is missing from the file leaves that field as it is, while a blank cell clears it. New books are added. Nothing is ever deleted by an import. Dates: give the year only (for example 1954). A column named publication_date is also accepted, and only its year is used. Older files with series_order or isbn_13 columns still import: series_order is used as the reading order if there is no reading_order column, and isbn_13 is ignored.</p><input type="file" id="fi" accept=".csv,text/csv"><div id="ir" class="m" role="status"></div><p><button type="button" id="ic">Close</button></p>`;
+  const d=$("im");d.innerHTML=`<h2 style="margin-top:0">Import CSV</h2><p class="m">Required columns: title, author, genre. Optional: subtitle, series, reading_order (also used as the series order), publication_order, publication_year, owned, read, notes, description, book_id. A book that already exists (matched by book_id, or by title + author + series) is <strong>updated</strong> with the values in the file; a column that is missing from the file leaves that field as it is, while a blank cell clears it. New books are added. Nothing is ever deleted by an import. Dates: give the year only (for example 1954). A column named publication_date is also accepted, and only its year is used. Older files with series_order or isbn_13 columns still import: series_order is used as the reading order if there is no reading_order column, and isbn_13 is ignored.</p><p><label class="m"><input type="checkbox" id="imdel"> Also remove books that are not in this file (only tick this if the file is your complete list)</label></p><input type="file" id="fi" accept=".csv,text/csv"><div id="ir" class="m" role="status"></div><p><button type="button" id="ic">Close</button></p>`;
   d.showModal();$("ic").onclick=()=>d.close();
   $("fi").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();
-    r.onload=async()=>{const out=$("ir");out.innerHTML=await doImport(String(r.result),out);fill();render()};r.readAsText(f)};
+    r.onload=async()=>{const out=$("ir");out.innerHTML=await doImport(String(r.result),out,$("imdel").checked);fill();render()};r.readAsText(f)};
 }
 function exp(){
   const q=v=>{v=v==null?"":String(v);return/[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
