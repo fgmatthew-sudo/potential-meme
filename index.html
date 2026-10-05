@@ -3,8 +3,8 @@
 <title>Reading List</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{--bg:#faf7f2;--fg:#2a2622;--mut:#7a7168;--card:#fff;--bd:#e4ddd2;--ok:#2f7d4f;--okbg:#e3f3e9;--ac:#8a4b2a;--er:#c0392b;--yw:#fdf3c8;--ywb:#e3cf86;--gn:#dcf1e1;--gnb:#9fcfae;--bl:#d9e7fa;--blb:#9db8e0}
-@media(prefers-color-scheme:dark){:root{--bg:#1b1917;--fg:#eee8df;--mut:#a39a8e;--card:#262321;--bd:#3a3531;--ok:#6fcf97;--okbg:#1f3a2a;--ac:#e0a47e;--er:#ff8a7a;--yw:#3a3316;--ywb:#6e5f2a;--gn:#1d3a29;--gnb:#2f6a46;--bl:#1b2c45;--blb:#33507a}}
+:root{--bg:#faf7f2;--fg:#2a2622;--mut:#7a7168;--card:#fff;--bd:#e4ddd2;--ok:#2f7d4f;--okbg:#e3f3e9;--ac:#8a4b2a;--er:#c0392b;--yw:#fdf3c8;--ywb:#e3cf86;--gn:#dcf1e1;--gnb:#9fcfae;--bl:#d9e7fa;--blb:#9db8e0;--or:#fbdcb8;--orb:#e8b27c}
+@media(prefers-color-scheme:dark){:root{--bg:#1b1917;--fg:#eee8df;--mut:#a39a8e;--card:#262321;--bd:#3a3531;--ok:#6fcf97;--okbg:#1f3a2a;--ac:#e0a47e;--er:#ff8a7a;--yw:#3a3316;--ywb:#6e5f2a;--gn:#1d3a29;--gnb:#2f6a46;--bl:#1b2c45;--blb:#33507a;--or:#4a3319;--orb:#7a5530}}
 *{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}
 body{background:var(--bg);color:var(--fg);font:15px/1.4 Georgia,'Times New Roman',serif;padding:12px 14px 40px;max-width:900px;margin:auto}
 h1{font-size:22px;margin:4px 0 10px}h2{font-size:17px;margin:20px 0 8px;color:var(--ac)}
@@ -21,7 +21,7 @@ dialog{background:var(--card);color:var(--fg);border:1px solid var(--bd);border-
 dialog::backdrop{background:#0008}dl{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;margin:10px 0;font-size:14px}dt{color:var(--mut)}dd{margin:0}
 textarea{width:100%;min-height:70px}
 .fm label{display:block;font-size:13px;color:var(--mut);margin-top:8px}.fm input:not([type=checkbox]),.fm textarea{width:100%}.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.row.st-own{background:var(--yw);border-color:var(--ywb)}.row.st-done{background:var(--gn);border-color:var(--gnb)}
+.row.st-own{background:var(--yw);border-color:var(--ywb)}.row.st-mjg{background:var(--or);border-color:var(--orb)}.row.st-done{background:var(--gn);border-color:var(--gnb)}
 .cov.has{padding:0}.cov img{width:100%;height:100%;object-fit:cover;border-radius:5px;display:block}
 .cov.big{flex:none;width:130px;height:195px;font-size:12px;margin:0 0 10px}
 .cg{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;margin:10px 0}
@@ -29,7 +29,7 @@ textarea{width:100%;min-height:70px}
 .ci img{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:4px;background:var(--bd)}
 .gg{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
 .gt{display:flex;flex-direction:column;gap:4px;padding:16px 12px;text-align:left;border-radius:12px;border-left:6px solid var(--ac)}
-.gt .gn{font-size:16px;font-weight:bold}.gt.own{background:var(--yw);border-top-color:var(--ywb);border-right-color:var(--ywb);border-bottom-color:var(--ywb)}.gt.wish{background:var(--bl);border-top-color:var(--blb);border-right-color:var(--blb);border-bottom-color:var(--blb)}.gt.own.wish{background:linear-gradient(90deg,var(--yw) 50%,var(--bl) 50%)}.gt.c{border-left-color:var(--tr)}
+.gt .gn{font-size:16px;font-weight:bold}.gt.own{background:var(--yw);border-top-color:var(--ywb);border-right-color:var(--ywb);border-bottom-color:var(--ywb)}.gt.wish{background:var(--bl);border-top-color:var(--blb);border-right-color:var(--blb);border-bottom-color:var(--blb)}.gt.done{background:var(--gn);border-top-color:var(--gnb);border-right-color:var(--gnb);border-bottom-color:var(--gnb)}.gt.own.wish{background:linear-gradient(90deg,var(--yw) 50%,var(--bl) 50%)}.gt.c{border-left-color:var(--tr)}
 #login{text-align:center;margin-top:20vh}
 </style></head><body>
 
@@ -98,7 +98,7 @@ async function onSession(s){
   history.replaceState({v:"home",g:null},"");go(null,false);
 }
 // Diagnostic line (safe to show: it reveals only the project address and the start of the public key)
-try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v26`}
+try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v27`}
 catch(e){$("diag").textContent=`Check: the Supabase address is not a valid web address (${JSON.stringify(SUPABASE_URL)}) · app v4`}
 if(SUPABASE_URL.startsWith("YOUR_")){showLogin("Set SUPABASE_URL and SUPABASE_ANON_KEY at the top of index.html.");$("gin").hidden=true}
 else if(!window.supabase){showLogin("Could not load the Supabase library. Check your connection.");$("gin").hidden=true}
@@ -198,17 +198,17 @@ const sorts={reading_order:"Reading order",title:"Title",author:"Author",genre:"
 $("so").innerHTML=Object.entries(sorts).map(([k,v])=>`<option value="${k}">Sort: ${v}</option>`).join("");
 function key(b,k){switch(k){case"title":return b.title.toLowerCase();case"author":return A(b.author_id).sort_name;case"genre":return G(b.genre_id).name;case"series":return b.series_id?S(b.series_id).name:null;case"owned":case"read":return b[k]?0:1;default:return b[k]}}
 function cmp(k){return(a,b)=>{const x=key(a,k),y=key(b,k);if(x==null&&y==null)return 0;if(x==null)return 1;if(y==null)return -1;return x<y?-1:x>y?1:0}}
-function tog(b,f){const on=!!b[f],lab={owned:on?"● Owned":"○ Not owned",read:on?"✓ Read":"○ Unread",wishlist:on?"♥ On wishlist":"♡ Wishlist",tbr:on?"✓ In TBR":"+ TBR"}[f];return`<button aria-pressed="${on}" data-id="${esc(b.book_id)}" data-f="${f}">${lab}</button>`}
+function tog(b,f){const on=!!b[f],lab={owned:on?"● Owned":"○ Not owned",read:on?"✓ Read":"○ Unread",wishlist:on?"♥ On wishlist":"♡ Wishlist",tbr:on?"✓ In TBR":"+ TBR",safe_mjg:on?"✓ Safe for MJG":"Safe for MJG"}[f];return`<button aria-pressed="${on}" data-id="${esc(b.book_id)}" data-f="${f}">${lab}</button>`}
 function coverBox(b,big){
   const c=covers.find(x=>x.cover_id==b.cover_id),cls="cov"+(big?" big":"")+(c?" has":"");
   const inner=c?`<img class="cim" src="${esc(big?c.image_url:(c.thumbnail_url||c.image_url))}" alt="${esc(c.alt_text||"Cover of "+b.title)}" loading="lazy" referrerpolicy="no-referrer">`:"[Book Cover Unavailable]";
   return`<div class="${cls}" style="background:hsl(${hue(b.book_id)} 35% 38%)"${c?"":` role="img" aria-label="Cover of ${esc(b.title)} unavailable"`}>${inner}</div>`}
 function row(b){const s=b.series_id?esc(S(b.series_id).name):"Standalone";
-  return`<div class="row${b.owned?(b.read?" st-done":" st-own"):""}">${coverBox(b)}<div class="main"><button class="t" data-open="${esc(b.book_id)}">${esc(b.title)}</button><div class="m">${esc(A(b.author_id).name)} · ${esc(G(b.genre_id).name)}</div><div class="m">Series: ${s}${b.reading_order!=null?` · Read #${b.reading_order}`:""}</div><div class="tg">${tog(b,"owned")}${tog(b,"read")}${tog(b,"wishlist")}${tog(b,"tbr")}</div></div></div>`}
+  return`<div class="row${b.safe_mjg?" st-mjg":b.owned?(b.read?" st-done":" st-own"):""}">${coverBox(b)}<div class="main"><button class="t" data-open="${esc(b.book_id)}">${esc(b.title)}</button><div class="m">${esc(A(b.author_id).name)} · ${esc(G(b.genre_id).name)}</div><div class="m">Series: ${s}${b.reading_order!=null?` · Read #${b.reading_order}`:""}</div><div class="tg">${tog(b,"owned")}${tog(b,"read")}${tog(b,"wishlist")}${tog(b,"tbr")}${tog(b,"safe_mjg")}</div></div></div>`}
 const TILE={wishlist:["#cfe0f7","#8fb1e0","#1d2b3f"],tbr:["#c9ece8","#86c9c2","#17332f"],
   "action/adventure":["#e6b98c","#c48a52","#3a2410"],"childhood books":["#dff0fb","#a5cfe8","#1d3140"],classics:["#d6d6d6","#a0a0a0","#222"],
   "comics/manga":["#d5efd6","#97c99b","#1c3320"],fantasy:["#cdbcee","#8a68c9","#2d2142"],horror:["#111","#111","#f2f2f2"],
-  "murder mystery":["#8e1b1b","#8e1b1b","#fbeaea"],romantasy:["#f7d3e1","#e29ab9","#42202f"],"sci-fi":["#fbefb8","#dcc766","#3a3210"]};
+  "murder mystery":["#8e1b1b","#8e1b1b","#fbeaea"],romantasy:["#f7d3e1","#e29ab9","#42202f"],"sci-fi":["#fbefb8","#dcc766","#3a3210"],"safe for mjg":["#fbdcb8","#ee9f55","#3a2410"]};
 const ALIAS={"action & adventure":"action/adventure","action and adventure":"action/adventure","action adventure":"action/adventure","childhood":"childhood books","comics":"comics/manga","manga":"comics/manga","comics & manga":"comics/manga","murder mysteries":"murder mystery","mystery":"murder mystery","sci fi":"sci-fi","scifi":"sci-fi","science fiction":"sci-fi","sf":"sci-fi","classic":"classics"};
 function tileColor(name){const k=String(name).trim().toLowerCase(),c=TILE[ALIAS[k]||k];return c?` c" style="--tb:${c[0]};--tr:${c[1]};--tc:${c[2]}`:""}
 function renderHome(){
@@ -216,7 +216,7 @@ function renderHome(){
   const gl=genres.filter(g=>by[g.genre_id]).sort((x,y)=>x.name.localeCompare(y.name));
   const tile=(id,name,n,r,h,o)=>`<button class="gt${tileColor(name)||(id===""?`" style="border-left-width:1px`:`" style="border-left-color:hsl(${h} 45% 45%)`)}" data-genre="${esc(id)}"><span class="gn">${esc(name)}</span><span class="m">${n} book${n==1?"":"s"}</span><span class="m">${o} owned</span><span class="m">${r} read</span></button>`;
   const sp=(id,name,n,h)=>`<button class="gt${tileColor(name)}" data-genre="${id}"><span class="gn">${name}</span><span class="m">${n} book${n==1?"":"s"}</span></button>`;
-  $("lists").innerHTML=sp("__wishlist","Wishlist",books.filter(b=>b.wishlist).length,340)+sp("__tbr","TBR",books.filter(b=>b.tbr).length,200);
+  $("lists").innerHTML=sp("__wishlist","Wishlist",books.filter(b=>b.wishlist).length,340)+sp("__tbr","TBR",books.filter(b=>b.tbr).length,200)+sp("__mjg","Safe for MJG",books.filter(b=>b.safe_mjg).length,30);
   $("hcnt").textContent=books.length?`${books.length} book${books.length==1?"":"s"} in ${gl.length} genre${gl.length==1?"":"s"}`:"";
   $("genres").innerHTML=books.length
     ?tile("","All books",books.length,books.filter(b=>b.read).length,30,books.filter(b=>b.owned).length)+gl.map(g=>tile(g.genre_id,g.name,by[g.genre_id].n,by[g.genre_id].r,hue(g.genre_id),by[g.genre_id].o)).join("")
@@ -229,7 +229,7 @@ function go(g,push,fresh,ser){
   if(home)special=null;
   if(!home){
     if(fresh)["q","fa","fs","fo","fr"].forEach(i=>$(i).value="");
-    special=g=="__wishlist"||g=="__tbr"?g.slice(2):null;
+    special=g=="__wishlist"||g=="__tbr"||g=="__mjg"?g.slice(2):null;
     $("fg").value=special?"":g;if(!special&&$("fg").value!==g)$("fg").value="";
   }
   if(!home)$("fs").value=ser||"";
@@ -245,18 +245,18 @@ function renderSeriesBtns(){
   $("fbar").hidden=on||filtersHidden;$("ftog").hidden=on;$("ftog").textContent=filtersHidden?"Show filters":"Hide filters";$("ftog").setAttribute("aria-expanded",String(!filtersHidden));wrap.hidden=!on;$("cnt").hidden=on;$("list").hidden=on;
   $("back").textContent=(g&&!special&&$("fs").value!==""&&books.some(b=>b.genre_id==g&&b.series_id))?"← "+G(g).name:"← Home";
   if(!on){box.innerHTML="";return}
-  const by={};let alone={n:0,o:0,r:0,w:0};
-  books.filter(b=>b.genre_id==g).forEach(b=>{const x=b.series_id?(by[b.series_id]??={n:0,o:0,r:0,w:0}):alone;x.n++;if(b.owned)x.o++;if(b.read)x.r++;if(b.wishlist)x.w++});
+  const by={};let alone={n:0,o:0,r:0,w:0,d:0};
+  books.filter(b=>b.genre_id==g).forEach(b=>{const x=b.series_id?(by[b.series_id]??={n:0,o:0,r:0,w:0,d:0}):alone;x.n++;if(b.owned)x.o++;if(b.read)x.r++;if(b.wishlist)x.w++;if(b.owned&&b.read)x.d++});
   const ids=Object.keys(by).sort((x,y)=>S(x).name.localeCompare(S(y).name));
-  const gc=tileColor(G(g).name)||`" style="border-left-color:hsl(${hue(g)} 45% 45%)`,t=(v,l,x)=>`<button class="gt${x.o?" own":""}${x.w?" wish":""}${gc}" data-ser="${esc(v)}"><span class="gn">${esc(l)}</span><span class="m">${x.n} book${x.n==1?"":"s"}</span><span class="m">${x.o} owned</span><span class="m">${x.r} read</span></button>`;
+  const gc=tileColor(G(g).name)||`" style="border-left-color:hsl(${hue(g)} 45% 45%)`,t=(v,l,x)=>`<button class="gt${x.d==x.n?" done":(x.o?" own":"")+(x.w?" wish":"")}${gc}" data-ser="${esc(v)}"><span class="gn">${esc(l)}</span><span class="m">${x.n} book${x.n==1?"":"s"}</span><span class="m">${x.o} owned</span><span class="m">${x.r} read</span></button>`;
   box.innerHTML=ids.map(i=>t(i,S(i).name,by[i])).join("")+(alone.n?t("__s","Standalone",alone):"");
 }
 function renderList(){
   renderSeriesBtns();if(seriesMode()){$("ltitle").textContent=G($("fg").value).name;return}
-  $("ltitle").textContent=special=="wishlist"?"Wishlist":special=="tbr"?"To be read (TBR)":$("fg").value?G($("fg").value).name+($("fs").value?" › "+($("fs").value=="__s"?"Standalone":(S($("fs").value)||{}).name||""):""):"All books";
+  $("ltitle").textContent=special=="wishlist"?"Wishlist":special=="tbr"?"To be read (TBR)":special=="mjg"?"Safe for MJG":$("fg").value?G($("fg").value).name+($("fs").value?" › "+($("fs").value=="__s"?"Standalone":(S($("fs").value)||{}).name||""):""):"All books";
   const q=$("q").value.toLowerCase(),g=$("fg").value,a=$("fa").value,s=$("fs").value,o=$("fo").value,r=$("fr").value,k=$("so").value;
   const l=books.filter(b=>{
-    if(special&&!b[special])return false;
+    if(special&&!b[special=="mjg"?"safe_mjg":special])return false;
     if(g&&b.genre_id!=g||a&&b.author_id!=a)return false;
     if(s=="__s"?b.series_id:s&&b.series_id!=s)return false;
     if(o&&b.owned!=(o=="1")||r&&b.read!=(r=="1"))return false;
@@ -274,7 +274,7 @@ function renderList(){
 /* ---------- detail ---------- */
 function detail(id){
   const b=books.find(x=>x.book_id==id);if(!b)return;const d=$("dlg"),v=x=>x==null?"—":esc(x);
-  d.innerHTML=`${coverBox(b,true)}<h2 style="margin-top:0">${esc(b.title)}</h2><div class="m">${esc(A(b.author_id).name)}</div><dl><dt>Genre</dt><dd>${esc(G(b.genre_id).name)}</dd><dt>Series</dt><dd>${b.series_id?esc(S(b.series_id).name):"Standalone"}</dd><dt>Series / reading order</dt><dd>${v(b.reading_order)}</dd><dt>Publication order</dt><dd>${v(b.publication_order)}</dd><dt>Published</dt><dd>${v(b.publication_year)}</dd></dl><p>${b.description?esc(b.description):'<span class="m">No description.</span>'}</p><div class="tg">${tog(b,"owned")}${tog(b,"read")}${tog(b,"wishlist")}${tog(b,"tbr")}</div><p><label class="m" for="nt">My notes</label><textarea id="nt">${esc(b.notes)}</textarea></p><div class="tg"><button id="ed">Edit</button><button id="cv">Choose cover</button><button id="dl">Delete</button><button id="cl">Close</button></div>`;
+  d.innerHTML=`${coverBox(b,true)}<h2 style="margin-top:0">${esc(b.title)}</h2><div class="m">${esc(A(b.author_id).name)}</div><dl><dt>Genre</dt><dd>${esc(G(b.genre_id).name)}</dd><dt>Series</dt><dd>${b.series_id?esc(S(b.series_id).name):"Standalone"}</dd><dt>Series / reading order</dt><dd>${v(b.reading_order)}</dd><dt>Publication order</dt><dd>${v(b.publication_order)}</dd><dt>Published</dt><dd>${v(b.publication_year)}</dd></dl><p>${b.description?esc(b.description):'<span class="m">No description.</span>'}</p><div class="tg">${tog(b,"owned")}${tog(b,"read")}${tog(b,"wishlist")}${tog(b,"tbr")}${tog(b,"safe_mjg")}</div><p><label class="m" for="nt">My notes</label><textarea id="nt">${esc(b.notes)}</textarea></p><div class="tg"><button id="ed">Edit</button><button id="cv">Choose cover</button><button id="dl">Delete</button><button id="cl">Close</button></div>`;
   d.showModal();
   let tm;$("nt").oninput=e=>{clearTimeout(tm);const val=e.target.value||null;tm=setTimeout(()=>upd(b,{notes:val}),700)};
   $("nt").onchange=e=>{clearTimeout(tm);upd(b,{notes:e.target.value||null})};
@@ -392,8 +392,8 @@ function imp(){
 }
 function exp(){
   const q=v=>{v=v==null?"":String(v);return/[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
-  const H=["book_id","title","subtitle","author","genre","series","reading_order","publication_order","publication_year","owned","read","wishlist","tbr","notes","description"];
-  const rows=books.map(b=>[b.book_id,b.title,b.subtitle,A(b.author_id).name,G(b.genre_id).name,b.series_id?S(b.series_id).name:"",b.reading_order,b.publication_order,b.publication_year,b.owned,b.read,!!b.wishlist,!!b.tbr,b.notes,b.description].map(q).join(","));
+  const H=["book_id","title","subtitle","author","genre","series","reading_order","publication_order","publication_year","owned","read","wishlist","tbr","safe_for_mjg","notes","description"];
+  const rows=books.map(b=>[b.book_id,b.title,b.subtitle,A(b.author_id).name,G(b.genre_id).name,b.series_id?S(b.series_id).name:"",b.reading_order,b.publication_order,b.publication_year,b.owned,b.read,!!b.wishlist,!!b.tbr,!!b.safe_mjg,b.notes,b.description].map(q).join(","));
   const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["﻿"+[H.join(","),...rows].join("\r\n")],{type:"text/csv"}));
   a.download="reading-list.csv";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 }
