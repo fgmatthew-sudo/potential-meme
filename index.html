@@ -29,7 +29,7 @@ textarea{width:100%;min-height:70px}
 .ci img{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:4px;background:var(--bd)}
 .gg{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
 .gt{display:flex;flex-direction:column;gap:4px;padding:16px 12px;text-align:left;border-radius:12px;border-left:6px solid var(--ac)}
-.gt .gn{font-size:16px;font-weight:bold}.gt.own{background:var(--yw);border-top-color:var(--ywb);border-right-color:var(--ywb);border-bottom-color:var(--ywb)}.gt.wish{background:var(--bl);border-top-color:var(--blb);border-right-color:var(--blb);border-bottom-color:var(--blb)}.gt.done{background:var(--gn);border-top-color:var(--gnb);border-right-color:var(--gnb);border-bottom-color:var(--gnb)}.gt.own.wish{background:linear-gradient(90deg,var(--yw) 50%,var(--bl) 50%)}.gt.c{border-left-color:var(--tr)}
+.gt .gn{font-size:16px;font-weight:bold}#sbtns{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}.gt.hc{position:relative;padding-right:78px;min-height:116px}.gt.hc .cov{position:absolute;right:10px;bottom:10px;width:56px;height:84px}.gt.own{background:var(--yw);border-top-color:var(--ywb);border-right-color:var(--ywb);border-bottom-color:var(--ywb)}.gt.wish{background:var(--bl);border-top-color:var(--blb);border-right-color:var(--blb);border-bottom-color:var(--blb)}.gt.done{background:var(--gn);border-top-color:var(--gnb);border-right-color:var(--gnb);border-bottom-color:var(--gnb)}.gt.own.wish{background:linear-gradient(90deg,var(--yw) 50%,var(--bl) 50%)}.gt.c{border-left-color:var(--tr)}
 #login{text-align:center;margin-top:20vh}
 </style></head><body>
 
@@ -98,7 +98,7 @@ async function onSession(s){
   history.replaceState({v:"home",g:null},"");go(null,false);
 }
 // Diagnostic line (safe to show: it reveals only the project address and the start of the public key)
-try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v28`}
+try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v29`}
 catch(e){$("diag").textContent=`Check: the Supabase address is not a valid web address (${JSON.stringify(SUPABASE_URL)}) · app v4`}
 if(SUPABASE_URL.startsWith("YOUR_")){showLogin("Set SUPABASE_URL and SUPABASE_ANON_KEY at the top of index.html.");$("gin").hidden=true}
 else if(!window.supabase){showLogin("Could not load the Supabase library. Check your connection.");$("gin").hidden=true}
@@ -248,8 +248,9 @@ function renderSeriesBtns(){
   const by={};let alone={n:0,o:0,r:0,w:0,d:0};
   books.filter(b=>b.genre_id==g).forEach(b=>{const x=b.series_id?(by[b.series_id]??={n:0,o:0,r:0,w:0,d:0}):alone;x.n++;if(b.owned)x.o++;if(b.read)x.r++;if(b.wishlist)x.w++;if(b.owned&&b.read)x.d++});
   const ids=Object.keys(by).sort((x,y)=>S(x).name.localeCompare(S(y).name));
-  const gc=tileColor(G(g).name)||`" style="border-left-color:hsl(${hue(g)} 45% 45%)`,t=(v,l,x)=>`<button class="gt${x.d==x.n?" done":(x.o?" own":"")+(x.w?" wish":"")}${gc}" data-ser="${esc(v)}"><span class="gn">${esc(l)}</span><span class="m">${x.n} book${x.n==1?"":"s"}</span><span class="m">${x.o} owned</span><span class="m">${x.r} read</span></button>`;
-  box.innerHTML=ids.map(i=>t(i,S(i).name,by[i])).join("")+(alone.n?t("__s","Standalone",alone):"");
+  const first=id=>books.filter(b=>b.series_id==id&&b.genre_id==g).sort((x,y)=>(x.reading_order??1e9)-(y.reading_order??1e9)||x.title.localeCompare(y.title))[0];
+  const gc=tileColor(G(g).name)||`" style="border-left-color:hsl(${hue(g)} 45% 45%)`,t=(v,l,x,f)=>`<button class="gt${f?" hc":""}${x.d==x.n?" done":(x.o?" own":"")+(x.w?" wish":"")}${gc}" data-ser="${esc(v)}"><span class="gn">${esc(l)}</span><span class="m">${x.n} book${x.n==1?"":"s"}</span><span class="m">${x.o} owned</span><span class="m">${x.r} read</span>${f?coverBox(f):""}</button>`;
+  box.innerHTML=ids.map(i=>t(i,S(i).name,by[i],first(i))).join("")+(alone.n?t("__s","Standalone",alone):"");
 }
 function renderList(){
   renderSeriesBtns();if(seriesMode()){$("ltitle").textContent=G($("fg").value).name;return}
