@@ -29,7 +29,7 @@ textarea{width:100%;min-height:70px}
 .ci img{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:4px;background:var(--bd)}
 .gg{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
 .gt{display:flex;flex-direction:column;gap:4px;padding:16px 12px;text-align:left;border-radius:12px;border-left:6px solid var(--ac)}
-.gt .gn{font-size:16px;font-weight:bold}.gt.c{border-left-color:var(--tr)}
+.gt .gn{font-size:16px;font-weight:bold}.gt.own{background:var(--yw);border-top-color:var(--ywb);border-right-color:var(--ywb);border-bottom-color:var(--ywb)}.gt.c{border-left-color:var(--tr)}
 #login{text-align:center;margin-top:20vh}
 </style></head><body>
 
@@ -98,7 +98,7 @@ async function onSession(s){
   history.replaceState({v:"home",g:null},"");go(null,false);
 }
 // Diagnostic line (safe to show: it reveals only the project address and the start of the public key)
-try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v24`}
+try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v25`}
 catch(e){$("diag").textContent=`Check: the Supabase address is not a valid web address (${JSON.stringify(SUPABASE_URL)}) · app v4`}
 if(SUPABASE_URL.startsWith("YOUR_")){showLogin("Set SUPABASE_URL and SUPABASE_ANON_KEY at the top of index.html.");$("gin").hidden=true}
 else if(!window.supabase){showLogin("Could not load the Supabase library. Check your connection.");$("gin").hidden=true}
@@ -207,7 +207,7 @@ function row(b){const s=b.series_id?esc(S(b.series_id).name):"Standalone";
   return`<div class="row${b.owned?(b.read?" st-done":" st-own"):""}">${coverBox(b)}<div class="main"><button class="t" data-open="${esc(b.book_id)}">${esc(b.title)}</button><div class="m">${esc(A(b.author_id).name)} · ${esc(G(b.genre_id).name)}</div><div class="m">Series: ${s}${b.reading_order!=null?` · Read #${b.reading_order}`:""}</div><div class="tg">${tog(b,"owned")}${tog(b,"read")}${tog(b,"wishlist")}${tog(b,"tbr")}</div></div></div>`}
 const TILE={wishlist:["#cfe0f7","#8fb1e0","#1d2b3f"],tbr:["#c9ece8","#86c9c2","#17332f"],
   "action/adventure":["#e6b98c","#c48a52","#3a2410"],"childhood books":["#dff0fb","#a5cfe8","#1d3140"],classics:["#d6d6d6","#a0a0a0","#222"],
-  "comics/manga":["#d5efd6","#97c99b","#1c3320"],fantasy:["#ddd0f1","#b09bd6","#2d2142"],horror:["#111","#111","#f2f2f2"],
+  "comics/manga":["#d5efd6","#97c99b","#1c3320"],fantasy:["#cdbcee","#8a68c9","#2d2142"],horror:["#111","#111","#f2f2f2"],
   "murder mystery":["#8e1b1b","#8e1b1b","#fbeaea"],romantasy:["#f7d3e1","#e29ab9","#42202f"],"sci-fi":["#fbefb8","#dcc766","#3a3210"]};
 const ALIAS={"action & adventure":"action/adventure","action and adventure":"action/adventure","action adventure":"action/adventure","childhood":"childhood books","comics":"comics/manga","manga":"comics/manga","comics & manga":"comics/manga","murder mysteries":"murder mystery","mystery":"murder mystery","sci fi":"sci-fi","scifi":"sci-fi","science fiction":"sci-fi","sf":"sci-fi","classic":"classics"};
 function tileColor(name){const k=String(name).trim().toLowerCase(),c=TILE[ALIAS[k]||k];return c?` c" style="--tb:${c[0]};--tr:${c[1]};--tc:${c[2]}`:""}
@@ -248,7 +248,7 @@ function renderSeriesBtns(){
   const by={};let alone={n:0,o:0,r:0};
   books.filter(b=>b.genre_id==g).forEach(b=>{const x=b.series_id?(by[b.series_id]??={n:0,o:0,r:0}):alone;x.n++;if(b.owned)x.o++;if(b.read)x.r++});
   const ids=Object.keys(by).sort((x,y)=>S(x).name.localeCompare(S(y).name));
-  const gc=tileColor(G(g).name)||`" style="border-left-color:hsl(${hue(g)} 45% 45%)`,t=(v,l,x)=>`<button class="gt${gc}" data-ser="${esc(v)}"><span class="gn">${esc(l)}</span><span class="m">${x.n} book${x.n==1?"":"s"}</span><span class="m">${x.o} owned</span><span class="m">${x.r} read</span></button>`;
+  const gc=tileColor(G(g).name)||`" style="border-left-color:hsl(${hue(g)} 45% 45%)`,t=(v,l,x)=>`<button class="gt${x.o?" own":""}${gc}" data-ser="${esc(v)}"><span class="gn">${esc(l)}</span><span class="m">${x.n} book${x.n==1?"":"s"}</span><span class="m">${x.o} owned</span><span class="m">${x.r} read</span></button>`;
   box.innerHTML=ids.map(i=>t(i,S(i).name,by[i])).join("")+(alone.n?t("__s","Standalone",alone):"");
 }
 function renderList(){
