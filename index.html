@@ -3,15 +3,15 @@
 <title>Reading List</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{--bg:#faf7f2;--fg:#2a2622;--mut:#7a7168;--card:#fff;--bd:#e4ddd2;--ok:#2f7d4f;--okbg:#e3f3e9;--ac:#8a4b2a;--er:#c0392b;--yw:#fdf3c8;--ywb:#e3cf86;--gn:#dcf1e1;--gnb:#9fcfae;--bl:#e8f1fd;--blb:#b6cdee;--or:#fbdcb8;--orb:#e8b27c}
-@media(prefers-color-scheme:dark){:root{--bg:#1b1917;--fg:#eee8df;--mut:#a39a8e;--card:#262321;--bd:#3a3531;--ok:#6fcf97;--okbg:#1f3a2a;--ac:#e0a47e;--er:#ff8a7a;--yw:#3a3316;--ywb:#6e5f2a;--gn:#1d3a29;--gnb:#2f6a46;--bl:#23395c;--blb:#41649a;--or:#4a3319;--orb:#7a5530}}
+:root{--bg:#faf7f2;--fg:#2a2622;--mut:#7a7168;--card:#fff;--bd:#e4ddd2;--ok:#2f7d4f;--okbg:#e3f3e9;--ac:#8a4b2a;--er:#c0392b;--yw:#fff0a0;--ywb:#ead35a;--gn:#dcf1e1;--gnb:#9fcfae;--bl:#e8f1fd;--blb:#b6cdee;--or:#fbdcb8;--orb:#e8b27c;--rd:#f8d4d4;--rdb:#e19a9a}
+@media(prefers-color-scheme:dark){:root{--bg:#1b1917;--fg:#eee8df;--mut:#a39a8e;--card:#262321;--bd:#3a3531;--ok:#6fcf97;--okbg:#1f3a2a;--ac:#e0a47e;--er:#ff8a7a;--yw:#4a4311;--ywb:#8c7b24;--gn:#1d3a29;--gnb:#2f6a46;--bl:#23395c;--blb:#41649a;--or:#4a3319;--orb:#7a5530;--rd:#4a2222;--rdb:#844545}}
 *{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}
 body{background:var(--bg);color:var(--fg);font:15px/1.4 Georgia,'Times New Roman',serif;padding:12px 14px 40px;max-width:900px;margin:auto}
 h1{font-size:22px;margin:4px 0 10px}h2{font-size:17px;margin:20px 0 8px;color:var(--ac)}
 .bar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.top{align-items:center;justify-content:space-between}
 input,select,textarea,button{font:inherit;font-size:14px;color:var(--fg);background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:7px 9px;max-width:100%}
 input[type=search]{flex:1 1 100%}select{flex:1 1 130px}
-button{cursor:pointer}button[aria-pressed=true]{background:var(--okbg);border-color:var(--ok);color:var(--ok)}
+button{cursor:pointer}button[aria-pressed=true]{background:var(--okbg);border-color:var(--ok);color:var(--ok)}button[data-f=owned][aria-pressed=true]{background:var(--yw);border-color:var(--ywb);color:var(--fg)}button[data-f=wishlist][aria-pressed=true]{background:var(--bl);border-color:var(--blb);color:var(--fg)}button[data-f=tbr][aria-pressed=true]{background:var(--rd);border-color:var(--rdb);color:var(--fg)}
 .cnt{color:var(--mut);font-size:13px;margin:4px 0}.err{color:var(--er)}
 .row{display:flex;gap:12px;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:10px;margin-bottom:8px}
 .cov{flex:0 0 56px;height:84px;border-radius:5px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:9px;padding:3px;color:#fff;overflow:hidden}
@@ -21,7 +21,7 @@ dialog{background:var(--card);color:var(--fg);border:1px solid var(--bd);border-
 dialog::backdrop{background:#0008}dl{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;margin:10px 0;font-size:14px}dt{color:var(--mut)}dd{margin:0}
 textarea{width:100%;min-height:70px}
 .fm label{display:block;font-size:13px;color:var(--mut);margin-top:8px}.fm input:not([type=checkbox]),.fm textarea{width:100%}.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.row.st-own{background:var(--yw);border-color:var(--ywb)}.row.st-mjg{background:var(--or);border-color:var(--orb)}.row.st-done{background:var(--gn);border-color:var(--gnb)}
+.row.st-own{background:var(--yw);border-color:var(--ywb)}.row.st-wish{background:var(--bl);border-color:var(--blb)}.row.st-tbr{background:var(--rd);border-color:var(--rdb)}.row.st-mjg{background:var(--or);border-color:var(--orb)}.row.st-done{background:var(--gn);border-color:var(--gnb)}
 .cov.has{padding:0}.cov img{width:100%;height:100%;object-fit:cover;border-radius:5px;display:block}
 .cov.big{flex:none;width:130px;height:195px;font-size:12px;margin:0 0 10px}
 .cg{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;margin:10px 0}
@@ -98,7 +98,7 @@ async function onSession(s){
   history.replaceState({v:"home",g:null},"");go(null,false);
 }
 // Diagnostic line (safe to show: it reveals only the project address and the start of the public key)
-try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v32`}
+try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v38`}
 catch(e){$("diag").textContent=`Check: the Supabase address is not a valid web address (${JSON.stringify(SUPABASE_URL)}) · app v4`}
 if(SUPABASE_URL.startsWith("YOUR_")){showLogin("Set SUPABASE_URL and SUPABASE_ANON_KEY at the top of index.html.");$("gin").hidden=true}
 else if(!window.supabase){showLogin("Could not load the Supabase library. Check your connection.");$("gin").hidden=true}
@@ -139,6 +139,8 @@ async function load(){
   const r=await Promise.all(Object.keys(keys).map(t=>fetchAll(t,keys[t])));
   const e=r.find(x=>x.error);if(e){msg("Load failed: "+e.error.message);return}
   [authors,genres,series,books,covers]=r.map(x=>x.data);msg("");fill();render();
+  // owned books cannot be on the Wishlist or Safe for MJG lists: tidy up any that already are
+  books.filter(b=>b.owned&&(b.wishlist||b.safe_mjg)).forEach(b=>{upd(b,{wishlist:false,safe_mjg:false}).then(render)});
 }
 async function upd(b,patch){
   const old={};for(const k in patch)old[k]=b[k];Object.assign(b,patch);
@@ -159,6 +161,7 @@ async function put(d,old){
     series_order:num(d.reading_order),reading_order:num(d.reading_order),publication_order:num(d.publication_order),
     publication_year:nz(d.publication_year)?Number(nz(d.publication_year)):null,description:nz(d.description),
     owned:d.owned,read:d.read,...(d.wishlist!==undefined?{wishlist:!!d.wishlist}:{}),...(d.tbr!==undefined?{tbr:!!d.tbr}:{}),notes:"notes" in d?nz(d.notes):old?old.notes:null};
+  if(old&&f.owned&&(old.wishlist||old.safe_mjg)){f.wishlist=false;f.safe_mjg=false}
   if(old){const {data,error}=await sb.from("books").update(f).eq("book_id",old.book_id).select().single();if(error)throw error;Object.assign(old,data);return old}
   const sl=slug([ge.name,au.name.split(" ").pop(),sn||"",f.title].filter(Boolean).join(" "));
   let u=sl,i=2;while(books.some(b=>b.slug==u))u=sl+"-"+i++;
@@ -198,14 +201,15 @@ const sorts={reading_order:"Reading order",title:"Title",author:"Author",genre:"
 $("so").innerHTML=Object.entries(sorts).map(([k,v])=>`<option value="${k}">Sort: ${v}</option>`).join("");
 function key(b,k){switch(k){case"title":return b.title.toLowerCase();case"author":return A(b.author_id).sort_name;case"genre":return G(b.genre_id).name;case"series":return b.series_id?S(b.series_id).name:null;case"owned":case"read":return b[k]?0:1;default:return b[k]}}
 function cmp(k){return(a,b)=>{const x=key(a,k),y=key(b,k);if(x==null&&y==null)return 0;if(x==null)return 1;if(y==null)return -1;return x<y?-1:x>y?1:0}}
-function tog(b,f){const on=!!b[f],lab={owned:on?"● Owned":"○ Not owned",read:on?"✓ Read":"○ Unread",wishlist:on?"♥ On wishlist":"♡ Wishlist",tbr:on?"✓ In TBR":"+ TBR",safe_mjg:on?"✓ Safe for MJG":"Safe for MJG"}[f];return`<button aria-pressed="${on}" data-id="${esc(b.book_id)}" data-f="${f}">${lab}</button>`}
+const LISTF=["wishlist","safe_mjg"];
+function tog(b,f){const lock=b.owned&&LISTF.includes(f),on=!!b[f]&&!lock,lab={owned:on?"● Owned":"○ Not owned",read:on?"✓ Read":"○ Unread",wishlist:on?"♥ On wishlist":"♡ Wishlist",tbr:on?"✓ In TBR":"+ TBR",safe_mjg:on?"✓ Safe for MJG":"Safe for MJG"}[f];return`<button aria-pressed="${on}" data-id="${esc(b.book_id)}" data-f="${f}"${lock?' disabled title="Owned books can\'t be on this list"':""}>${lab}</button>`}
 function coverBox(b,big){
   const c=covers.find(x=>x.cover_id==b.cover_id),cls="cov"+(big?" big":"")+(c?" has":"");
   const inner=c?`<img class="cim" src="${esc(big?c.image_url:(c.thumbnail_url||c.image_url))}" alt="${esc(c.alt_text||"Cover of "+b.title)}" loading="lazy" referrerpolicy="no-referrer">`:"[Book Cover Unavailable]";
   return`<div class="${cls}" style="background:hsl(${hue(b.book_id)} 35% 38%)"${c?"":` role="img" aria-label="Cover of ${esc(b.title)} unavailable"`}>${inner}</div>`}
 function row(b){const s=b.series_id?esc(S(b.series_id).name):"Standalone";
-  return`<div class="row${b.safe_mjg?" st-mjg":b.owned?(b.read?" st-done":" st-own"):""}">${coverBox(b)}<div class="main"><button class="t" data-open="${esc(b.book_id)}">${esc(b.title)}</button><div class="m">${esc(A(b.author_id).name)} · ${esc(G(b.genre_id).name)}</div><div class="m">Series: ${s}${b.reading_order!=null?` · Read #${b.reading_order}`:""}</div><div class="tg">${tog(b,"owned")}${tog(b,"read")}${tog(b,"wishlist")}${tog(b,"tbr")}${tog(b,"safe_mjg")}</div></div></div>`}
-const TILE={wishlist:["#cfe0f7","#8fb1e0","#1d2b3f"],tbr:["#c9ece8","#86c9c2","#17332f"],
+  return`<div class="row${b.tbr?" st-tbr":b.read?" st-done":b.owned?" st-own":b.wishlist?" st-wish":b.safe_mjg?" st-mjg":""}">${coverBox(b)}<div class="main"><button class="t" data-open="${esc(b.book_id)}">${esc(b.title)}</button><div class="m">${esc(A(b.author_id).name)} · ${esc(G(b.genre_id).name)}</div><div class="m">Series: ${s}${b.reading_order!=null?` · Read #${b.reading_order}`:""}</div><div class="tg">${tog(b,"owned")}${tog(b,"read")}${tog(b,"wishlist")}${tog(b,"tbr")}${tog(b,"safe_mjg")}</div></div></div>`}
+const TILE={wishlist:["#cfe0f7","#8fb1e0","#1d2b3f"],tbr:["#f8d4d4","#e08a8a","#3a1a1a"],
   "action/adventure":["#e6b98c","#c48a52","#3a2410"],"childhood books":["#dff0fb","#a5cfe8","#1d3140"],classics:["#d6d6d6","#a0a0a0","#222"],
   "comics/manga":["#d5efd6","#97c99b","#1c3320"],fantasy:["#cdbcee","#8a68c9","#2d2142"],horror:["#111","#111","#f2f2f2"],
   "murder mystery":["#8e1b1b","#8e1b1b","#fbeaea"],romantasy:["#f7d3e1","#e29ab9","#42202f"],"sci-fi":["#fbefb8","#dcc766","#3a3210"],"safe for mjg":["#fbdcb8","#ee9f55","#3a2410"]};
@@ -214,9 +218,9 @@ function tileColor(name){const k=String(name).trim().toLowerCase(),c=TILE[ALIAS[
 function renderHome(){
   const by={};books.forEach(b=>{const x=(by[b.genre_id]??={n:0,r:0,o:0});x.n++;if(b.read)x.r++;if(b.owned)x.o++});
   const gl=genres.filter(g=>by[g.genre_id]).sort((x,y)=>x.name.localeCompare(y.name));
-  const tile=(id,name,n,r,h,o)=>`<button class="gt${tileColor(name)||(id===""?`" style="border-left-width:1px`:`" style="border-left-color:hsl(${h} 45% 45%)`)}" data-genre="${esc(id)}"><span class="gn">${esc(name)}</span><span class="m">${n} book${n==1?"":"s"}</span><span class="m">${o} owned</span><span class="m">${r} read</span></button>`;
+  const tile=(id,name,n,r,h,o)=>`<button class="gt${tileColor(name)||(id===""?`" style="border-left-color:var(--card)`:`" style="border-left-color:hsl(${h} 45% 45%)`)}" data-genre="${esc(id)}"><span class="gn">${esc(name)}</span><span class="m">${n} book${n==1?"":"s"}</span><span class="m">${o} owned</span><span class="m">${r} read</span></button>`;
   const sp=(id,name,n,h)=>`<button class="gt${tileColor(name)}" data-genre="${id}"><span class="gn">${name}</span><span class="m">${n} book${n==1?"":"s"}</span></button>`;
-  $("lists").innerHTML=sp("__wishlist","Wishlist",books.filter(b=>b.wishlist).length,340)+sp("__tbr","TBR",books.filter(b=>b.tbr).length,200)+sp("__mjg","Safe for MJG",books.filter(b=>b.safe_mjg).length,30);
+  $("lists").innerHTML=sp("__wishlist","Wishlist",books.filter(b=>b.wishlist&&!b.owned).length,340)+sp("__tbr","TBR",books.filter(b=>b.tbr).length,200)+sp("__mjg","Safe for MJG",books.filter(b=>b.safe_mjg&&!b.owned).length,30);
   $("hcnt").textContent=books.length?`${books.length} book${books.length==1?"":"s"} in ${gl.length} genre${gl.length==1?"":"s"}`:"";
   $("genres").innerHTML=books.length
     ?tile("","All books",books.length,books.filter(b=>b.read).length,30,books.filter(b=>b.owned).length)+gl.map(g=>tile(g.genre_id,g.name,by[g.genre_id].n,by[g.genre_id].r,hue(g.genre_id),by[g.genre_id].o)).join("")
@@ -239,25 +243,34 @@ function go(g,push,fresh,ser){
 }
 window.addEventListener("popstate",e=>{const s=e.state;go(s&&s.v==="list"?s.g:null,false,false,s&&s.s)});
 // a genre that has series shows one tile per series (plus Standalone); a tile opens its own page of books
-function seriesMode(){const g=$("fg").value;return!!g&&!special&&$("fs").value===""&&books.some(b=>b.genre_id==g&&b.series_id)}
+const inList=b=>special=="wishlist"?b.wishlist&&!b.owned:special=="mjg"?b.safe_mjg&&!b.owned:special=="tbr"?!!b.tbr:true;
+const scope=()=>special?books.filter(inList):books.filter(b=>b.genre_id==$("fg").value);
+const SPNAME={wishlist:"Wishlist",mjg:"Safe for MJG",tbr:"To be read (TBR)"};
+function seriesMode(){
+  const g=$("fg").value;if($("fs").value!=="")return false;
+  if(special)return(special=="wishlist"||special=="mjg")&&scope().some(b=>b.series_id);
+  return!!g&&books.some(b=>b.genre_id==g&&b.series_id)}
 function renderSeriesBtns(){
-  const g=$("fg").value,box=$("sbtns"),wrap=$("sbox"),on=seriesMode();
+  const g=$("fg").value,box=$("sbtns"),wrap=$("sbox"),on=seriesMode(),sd=$("fs").value!=="",sc=scope();
   $("fbar").hidden=on||filtersHidden;$("ftog").hidden=on;$("ftog").textContent=filtersHidden?"Show filters":"Hide filters";$("ftog").setAttribute("aria-expanded",String(!filtersHidden));wrap.hidden=!on;$("cnt").hidden=on;$("list").hidden=on;
-  $("back").textContent=(g&&!special&&$("fs").value!==""&&books.some(b=>b.genre_id==g&&b.series_id))?"← "+G(g).name:"← Home";
+  const hasS=sc.some(b=>b.series_id);
+  $("back").textContent=sd&&hasS&&(special=="wishlist"||special=="mjg")?"← "+SPNAME[special]:(sd&&g&&!special&&hasS)?"← "+G(g).name:"← Home";
   if(!on){box.innerHTML="";return}
-  const by={};let alone={n:0,o:0,r:0,w:0,d:0};
-  books.filter(b=>b.genre_id==g).forEach(b=>{const x=b.series_id?(by[b.series_id]??={n:0,o:0,r:0,w:0,d:0}):alone;x.n++;if(b.owned)x.o++;if(b.read)x.r++;if(b.wishlist)x.w++;if(b.owned&&b.read)x.d++});
+  const by={},gen={};let alone={n:0,o:0,r:0,w:0,d:0};
+  sc.forEach(b=>{const x=b.series_id?(by[b.series_id]??={n:0,o:0,r:0,w:0,d:0}):alone;if(b.series_id)gen[b.series_id]??=b.genre_id;x.n++;if(b.owned)x.o++;if(b.read)x.r++;if(b.wishlist&&!b.owned)x.w++;if(b.owned&&b.read)x.d++});
   const ids=Object.keys(by).sort((x,y)=>S(x).name.localeCompare(S(y).name));
-  const first=id=>books.filter(b=>b.series_id==id&&b.genre_id==g).sort((x,y)=>(x.reading_order??1e9)-(y.reading_order??1e9)||x.title.localeCompare(y.title))[0];
-  const gc=tileColor(G(g).name)||`" style="border-left-color:hsl(${hue(g)} 45% 45%)`,t=(v,l,x,f)=>`<button class="gt${x.d==x.n?" done":(x.o?" own":"")+(x.w?" wish":"")}${gc}" data-ser="${esc(v)}"><span class="gn">${esc(l)}</span><span class="sr"><span class="si"><span class="m">${x.n} book${x.n==1?"":"s"}</span><span class="m">${x.o} owned</span><span class="m">${x.r} read</span></span>${f?coverBox(f):""}</span></button>`;
-  box.innerHTML=ids.map(i=>t(i,S(i).name,by[i],first(i))).join("")+(alone.n?t("__s","Standalone",alone):"");
+  const first=id=>sc.filter(b=>b.series_id==id).sort((x,y)=>(x.reading_order??1e9)-(y.reading_order??1e9)||x.title.localeCompare(y.title))[0];
+  const col=(gid,name)=>tileColor(name)||`" style="border-left-color:hsl(${hue(gid)} 45% 45%)`;
+  const t=(v,l,x,f,gc)=>`<button class="gt${x.d==x.n?" done":(x.o?" own":"")+(x.w?" wish":"")}${gc}" data-ser="${esc(v)}"><span class="gn">${esc(l)}</span><span class="sr"><span class="si"><span class="m">${x.n} book${x.n==1?"":"s"}</span><span class="m">${x.o} owned</span><span class="m">${x.r} read</span></span>${f?coverBox(f):""}</span></button>`;
+  box.innerHTML=ids.map(i=>t(i,S(i).name,by[i],first(i),col(gen[i],G(gen[i]).name))).join("")+(alone.n?t("__s","Standalone",alone,null,special?tileColor(special=="mjg"?"Safe for MJG":"Wishlist"):col(g,G(g).name)):"");
 }
 function renderList(){
-  renderSeriesBtns();if(seriesMode()){$("ltitle").textContent=G($("fg").value).name;return}
-  $("ltitle").textContent=special=="wishlist"?"Wishlist":special=="tbr"?"To be read (TBR)":special=="mjg"?"Safe for MJG":$("fg").value?G($("fg").value).name+($("fs").value?" › "+($("fs").value=="__s"?"Standalone":(S($("fs").value)||{}).name||""):""):"All books";
+  renderSeriesBtns();if(seriesMode()){$("ltitle").textContent=special?SPNAME[special]:G($("fg").value).name;return}
+  {const sv=$("fs").value,sn=sv?" › "+(sv=="__s"?"Standalone":(S(sv)||{}).name||""):"";
+   $("ltitle").textContent=special?SPNAME[special]+sn:$("fg").value?G($("fg").value).name+sn:"All books"}
   const q=$("q").value.toLowerCase(),g=$("fg").value,a=$("fa").value,s=$("fs").value,o=$("fo").value,r=$("fr").value,k=$("so").value;
   const l=books.filter(b=>{
-    if(special&&!b[special=="mjg"?"safe_mjg":special])return false;
+    if(special&&(!b[special=="mjg"?"safe_mjg":special]||(special!="tbr"&&b.owned)))return false;
     if(g&&b.genre_id!=g||a&&b.author_id!=a)return false;
     if(s=="__s"?b.series_id:s&&b.series_id!=s)return false;
     if(o&&b.owned!=(o=="1")||r&&b.read!=(r=="1"))return false;
@@ -515,14 +528,18 @@ document.addEventListener("error",e=>{const t=e.target;if(!t||t.tagName!=="IMG")
 document.addEventListener("click",async e=>{
   const t=e.target.closest("button");if(!t)return;
   if(t.id=="ftog"){filtersHidden=!filtersHidden;try{localStorage.setItem("filtersHidden",filtersHidden?"1":"0")}catch(e){}render();return}
-  if(t.dataset.ser!==undefined){go($("fg").value,true,false,t.dataset.ser);return}
+  if(t.dataset.ser!==undefined){go(special?"__"+special:$("fg").value,true,false,t.dataset.ser);return}
   if(t.dataset.genre!==undefined){go(t.dataset.genre,true,true);return}
   if(t.id=="back"){if(history.state&&history.state.v==="list")history.back();else go(null,false);return}
   if(t.dataset.open)return detail(t.dataset.open);
   if(t.dataset.f){
     const b=books.find(x=>x.book_id==t.dataset.id);if(!b)return;
     const refresh=()=>{if($("dlg").open)detail(b.book_id);else render()};
-    const p=upd(b,{[t.dataset.f]:!b[t.dataset.f]});refresh();await p;refresh();return;
+    const f=t.dataset.f;if(b.owned&&LISTF.includes(f))return;
+    const patch={[f]:!b[f]};
+    // marking a book as owned takes it off the Wishlist and Safe for MJG lists
+    if(f=="owned"&&!b.owned){if(b.wishlist)patch.wishlist=false;if(b.safe_mjg)patch.safe_mjg=false}
+    const p=upd(b,patch);refresh();await p;refresh();return;
   }
   if(t.id=="gv"){t.setAttribute("aria-pressed",t.getAttribute("aria-pressed")!="true");render()}
   if(t.id=="ad"||t.id=="ad2")form();if(t.id=="imp")imp();if(t.id=="ex")exp();
