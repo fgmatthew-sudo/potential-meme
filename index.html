@@ -1,10 +1,10 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><script>try{var t=localStorage.getItem("theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Reading List</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{--bg:#faf7f2;--fg:#2a2622;--mut:#7a7168;--card:#fff;--bd:#e4ddd2;--ok:#2f7d4f;--okbg:#e3f3e9;--ac:#8a4b2a;--er:#c0392b;--yw:#FFEE8C;--ywb:#e3cf6a;--gn:#dcf1e1;--gnb:#9fcfae;--bl:#e8f1fd;--blb:#b6cdee;--or:#fbdcb8;--orb:#e8b27c;--rd:#f8d4d4;--rdb:#e19a9a}
-@media(prefers-color-scheme:dark){:root{--bg:#1b1917;--fg:#eee8df;--mut:#a39a8e;--card:#262321;--bd:#3a3531;--ok:#6fcf97;--okbg:#1f3a2a;--ac:#e0a47e;--er:#ff8a7a;--yw:#413a14;--ywb:#7a6b2a;--gn:#1d3a29;--gnb:#2f6a46;--bl:#23395c;--blb:#41649a;--or:#4a3319;--orb:#7a5530;--rd:#4a2222;--rdb:#844545}}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#1b1917;--fg:#eee8df;--mut:#a39a8e;--card:#262321;--bd:#3a3531;--ok:#6fcf97;--okbg:#1f3a2a;--ac:#e0a47e;--er:#ff8a7a;--yw:#55490f;--ywb:#9c8620;--gn:#1d3a29;--gnb:#2f6a46;--bl:#23395c;--blb:#41649a;--or:#4a3319;--orb:#7a5530;--rd:#4a2222;--rdb:#844545}}:root[data-theme=dark]{--bg:#1b1917;--fg:#eee8df;--mut:#a39a8e;--card:#262321;--bd:#3a3531;--ok:#6fcf97;--okbg:#1f3a2a;--ac:#e0a47e;--er:#ff8a7a;--yw:#55490f;--ywb:#9c8620;--gn:#1d3a29;--gnb:#2f6a46;--bl:#23395c;--blb:#41649a;--or:#4a3319;--orb:#7a5530;--rd:#4a2222;--rdb:#844545}:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
 *{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}
 body{background:var(--bg);color:var(--fg);font:15px/1.4 Georgia,'Times New Roman',serif;padding:12px 14px 40px;max-width:900px;margin:auto}
 h1{font-size:22px;margin:4px 0 10px}h2{font-size:17px;margin:20px 0 8px;color:var(--ac)}
@@ -42,7 +42,7 @@ textarea{width:100%;min-height:70px}
 </div>
 
 <div id="app" hidden>
-<div class="bar top"><h1>📚 My Reading List</h1><span><span class="m" id="who"></span> <button id="out">Sign out</button></span></div>
+<div class="bar top"><h1>📚 My Reading List</h1><span><span class="m" id="who"></span> <button id="thm" aria-label="Switch between light and dark mode"></button> <button id="out">Sign out</button></span></div>
 <div class="cnt err" id="msg" role="status"></div>
 
 <div id="home">
@@ -98,7 +98,7 @@ async function onSession(s){
   history.replaceState({v:"home",g:null},"");go(null,false);
 }
 // Diagnostic line (safe to show: it reveals only the project address and the start of the public key)
-try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v40`}
+try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v41`}
 catch(e){$("diag").textContent=`Check: the Supabase address is not a valid web address (${JSON.stringify(SUPABASE_URL)}) · app v4`}
 if(SUPABASE_URL.startsWith("YOUR_")){showLogin("Set SUPABASE_URL and SUPABASE_ANON_KEY at the top of index.html.");$("gin").hidden=true}
 else if(!window.supabase){showLogin("Could not load the Supabase library. Check your connection.");$("gin").hidden=true}
@@ -524,9 +524,15 @@ document.addEventListener("error",e=>{const t=e.target;if(!t||t.tagName!=="IMG")
   const ci=t.closest(".ci");if(ci){ci.remove();return}
   if(t.classList.contains("cim")){const p=t.parentElement;p.classList.remove("has");p.textContent="[Book Cover Unavailable]"}},true);
 
+/* ---------- light / dark mode ---------- */
+const isDark=()=>{const t=document.documentElement.getAttribute("data-theme");return t?t==="dark":matchMedia("(prefers-color-scheme:dark)").matches};
+function themeBtn(){$("thm").textContent=isDark()?"☀ Light mode":"🌙 Dark mode"}
+themeBtn();matchMedia("(prefers-color-scheme:dark)").addEventListener&&matchMedia("(prefers-color-scheme:dark)").addEventListener("change",themeBtn);
+
 /* ---------- events ---------- */
 document.addEventListener("click",async e=>{
   const t=e.target.closest("button");if(!t)return;
+  if(t.id=="thm"){const n=isDark()?"light":"dark";document.documentElement.setAttribute("data-theme",n);try{localStorage.setItem("theme",n)}catch(e){}themeBtn();return}
   if(t.id=="ftog"){filtersHidden=!filtersHidden;try{localStorage.setItem("filtersHidden",filtersHidden?"1":"0")}catch(e){}render();return}
   if(t.dataset.ser!==undefined){go(special?"__"+special:$("fg").value,true,false,t.dataset.ser);return}
   if(t.dataset.genre!==undefined){go(t.dataset.genre,true,true);return}
