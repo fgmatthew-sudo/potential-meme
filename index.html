@@ -29,7 +29,7 @@ textarea{width:100%;min-height:70px}
 .ci img{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:4px;background:var(--bd)}
 .gg{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
 .gt{display:flex;flex-direction:column;gap:4px;padding:16px 12px;text-align:left;border-radius:12px;border-left:6px solid var(--ac)}
-.gt .gn{font-size:16px;font-weight:bold}.bg{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}.bc{display:flex;flex-direction:column;gap:3px;min-width:0;min-height:128px;padding:6px;background:var(--card);border:1px solid var(--bd);border-radius:8px;font-size:10.5px;line-height:1.25}.bc .bq{font-weight:bold;font-size:10.5px}.bc .m{font-size:10px}.bc .bt{background:none;border:0;padding:0;text-align:left;font-style:italic;font-size:11px;color:inherit;overflow-wrap:anywhere}.bc .bb{display:flex;gap:4px;margin-top:auto}.bc .bb button{padding:1px 6px;font-size:12px}.bc.bd{background:var(--gn);border-color:var(--gnb);color:var(--onc)}.bc.bd .m{color:var(--onm)}.bc.bl{box-shadow:inset 0 0 0 2px var(--ac)}@media(max-width:480px){.bc{padding:4px;font-size:9px;min-height:110px}.bc .bq{font-size:9px}.bc .bt{font-size:9.5px}.bc .m{font-size:8.5px}}
+.gt .gn{font-size:16px;font-weight:bold}.bg{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}.bc{display:flex;flex-direction:column;gap:3px;min-width:0;min-height:128px;padding:6px;background:var(--card);border:1px solid var(--bd);border-radius:8px;font-size:10.5px;line-height:1.25}.bc .bq{font-weight:bold;font-size:10.5px}.bc .m{font-size:10px}.bc .bt{background:none;border:0;padding:0;text-align:left;font-style:italic;font-size:11px;color:inherit;overflow-wrap:anywhere}.bc .bb{display:flex;gap:4px;margin-top:auto}.bc .bb button{padding:1px 6px;font-size:12px}.bc.bd{background:var(--gn);border-color:var(--gnb);color:var(--onc)}.bc.bd .m{color:var(--onm)}.bc.bx{border-style:dashed;border-color:var(--ac)}.bc.bx .bq::before{content:'✦ ';color:var(--ac)}.bc .bn{font-style:italic;font-size:11px;overflow-wrap:anywhere}.bc .bb a{padding:1px 6px;font-size:12px;border:1px solid var(--bd);border-radius:4px;color:inherit;text-decoration:none}.bc.bl{box-shadow:inset 0 0 0 2px var(--ac)}@media(max-width:480px){.bc{padding:4px;font-size:9px;min-height:110px}.bc .bq{font-size:9px}.bc .bt{font-size:9.5px}.bc .m{font-size:8.5px}}
 .pb{display:block;width:100%;height:8px;border-radius:99px;background:rgba(127,127,127,.28);overflow:hidden;margin-top:8px}.pb i{display:block;height:100%;background:var(--ok);border-radius:99px}#sbtns .gt{min-height:190px}.gt .sr{display:flex;justify-content:space-between;align-items:flex-end;gap:8px;width:100%;margin-top:auto}.gt .si{display:flex;flex-direction:column;gap:4px}.gt .sr .cov{flex:none;width:56px;height:84px}.gt.own{background:var(--yw);border-top-color:var(--ywb);border-right-color:var(--ywb);border-bottom-color:var(--ywb)}.gt.wish{background:var(--bl);border-top-color:var(--blb);border-right-color:var(--blb);border-bottom-color:var(--blb)}.gt.done{background:var(--gn);border-top-color:var(--gnb);border-right-color:var(--gnb);border-bottom-color:var(--gnb)}.gt.own.wish{background:linear-gradient(to bottom right,var(--yw) 50%,var(--bl) 50%)}.row.st-done,.row.st-done .t,.gt.done,.gt.done .gn,.row.st-own,.row.st-own .t,.gt.own,.gt.own .gn,.row.st-wish,.row.st-wish .t,.gt.wish,.gt.wish .gn{color:var(--onc)}.row.st-done .m,.gt.done .m,.row.st-own .m,.gt.own .m,.row.st-wish .m,.gt.wish .m{color:var(--onm)}.gt.c{border-left-color:var(--tr)}
 #login{text-align:center;margin-top:20vh}
 </style></head><body>
@@ -100,7 +100,7 @@ async function onSession(s){
   history.replaceState({v:"home",g:null},"");go(null,false);
 }
 // Diagnostic line (safe to show: it reveals only the project address and the start of the public key)
-try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v47`}
+try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v48`}
 catch(e){$("diag").textContent=`Check: the Supabase address is not a valid web address (${JSON.stringify(SUPABASE_URL)}) · app v4`}
 if(SUPABASE_URL.startsWith("YOUR_")){showLogin("Set SUPABASE_URL and SUPABASE_ANON_KEY at the top of index.html.");$("gin").hidden=true}
 else if(!window.supabase){showLogin("Could not load the Supabase library. Check your connection.");$("gin").hidden=true}
@@ -568,6 +568,28 @@ const BDEFS=[
   {id:"num",label:"A number in the title",test:b=>BNUM.test(b.title)},
   {id:"any",label:"Any book you fancy",test:()=>true}
 ];
+// "discovery" squares: random challenges not tied to your list, for stumbling on new books and series
+const XDEFS=[
+  ["A debut novel","best debut novels"],["A book that won a major literary award","award winning novels"],
+  ["A book translated from another language","best translated novels"],["A short book under 200 pages","great short novels under 200 pages"],
+  ["A book with a colour in the title (new to you)","books with colors in the title"],["A book first published the year you were born","best books of the year you were born"],
+  ["An author from a country you've never read","books by authors from around the world"],["A book set in a city you'd love to visit","novels set in cities"],
+  ["The first book of a series you've never heard of","hidden gem book series to start"],["A book with a map in the front","fantasy books with maps"],
+  ["A book that was adapted into a film or TV show","best book to screen adaptations"],["A book a friend recommends","books friends recommend"],
+  ["A book from the bargain bin or charity shop","best books to find in charity shops"],["A book with a one-word title (new to you)","novels with one word titles"],
+  ["A book from a genre you rarely read","genre to try if you never read"],["A book by an author whose name you can't pronounce","authors with hard to pronounce names"],
+  ["A book with a number in the title (new to you)","books with numbers in the title"],["A book that's been banned or challenged somewhere","banned books worth reading"],
+  ["A book with an animal on the cover","book covers with animals"],["A book published this year","best new books this year"],
+  ["A graphic novel or manga you haven't tried","best graphic novels for beginners"],["A book from the library's staff-picks shelf","staff picks books"],
+  ["A book by a first-name-only or pen-named author","famous pseudonym authors"],["A book where the title is a question","books with a question as title"],
+  ["A book with a blue cover","books with blue covers"],["A book with a dragon, ghost or robot in it","books with dragons ghosts robots"],
+  ["A book with more than 600 pages","best long books over 600 pages"],["A completed trilogy you haven't started","best completed trilogies"],
+  ["A book set in a time period you rarely read","historical fiction different eras"],["A book picked by closing your eyes at the shelf","random book recommendations"],
+  ["A book from a 'best of the decade' list","best books of the decade"],["A book that's been on your radar but not on your list","books everyone talks about"],
+  ["A cosy read for a rainy day","best cosy books"],["A book with a twist ending","novels with best twist endings"],
+  ["A book with a character who shares your name","books with main character named"]
+].map((a,i)=>({id:"x:"+i,label:a[0],q:a[1]}));
+const xdef=id=>XDEFS.find(d=>d.id==id)||XDEFS[0];
 function bdef(id){
   if(id.startsWith("g:")){const gid=id.slice(2),g=genres.find(x=>x.genre_id==gid);return g?{id,label:"A "+g.name+" book",test:b=>b.genre_id==gid}:BDEFS.find(d=>d.id=="any")}
   return BDEFS.find(d=>d.id==id)||BDEFS.find(d=>d.id=="any");
@@ -580,11 +602,13 @@ function newBoard(){
   const ctx=bctx(),cells=[],used=new Set();
   const genreDefs=shuf(genres.map(g=>bdef("g:"+g.genre_id))).slice(0,5);
   const pool=shuf(BDEFS.filter(d=>d.id!="any").concat(genreDefs));
+  const xs=shuf(XDEFS).slice(0,10);
   for(const d of pool){
-    if(cells.length>=25)break;
+    if(cells.length>=15)break;
     const c=bcands(d,ctx,used);if(!c.length)continue;
     const b=rnd(c);used.add(b.book_id);cells.push({c:d.id,b:b.book_id,d:false});
   }
+  xs.forEach(d=>cells.push({c:d.id,b:null,d:false,n:""}));
   while(cells.length<25){
     const c=bcands(bdef("any"),ctx,used),b=c.length?rnd(c):null;
     if(b)used.add(b.book_id);cells.push({c:"any",b:b?b.book_id:null,d:false});
@@ -605,6 +629,10 @@ async function loadBingo(){
     try{cells=JSON.parse(localStorage.getItem("bingo_"+year))}catch(e){}}
   else if(r.data)cells=r.data.cells;
   if(!Array.isArray(cells)||cells.length!=25){if(!books.length)return;cells=newBoard();bingo={year,cells};await saveBingo()}
+  if(!cells.some(c=>String(c.c).startsWith("x:"))){
+    const idx=shuf(cells.map((c,i)=>i).filter(i=>!cells[i].d)).slice(0,10),xs=shuf(XDEFS);
+    idx.forEach((i,k)=>{cells[i]={c:xs[k].id,b:null,d:false,n:""}});bingo={year,cells};await saveBingo();
+  }
   bingo={year,cells};renderBingo();
 }
 function bingoLines(done){
@@ -619,13 +647,20 @@ function renderBingo(){
   const done=cells.map((c,i)=>!!c.d||!!(bk[i]&&bk[i].read));
   const lines=bingoLines(done),inLine=new Set(lines.flat());
   const html=cells.map((c,i)=>{
+    if(String(c.c).startsWith("x:")){
+      const x=xdef(c.c);
+      return`<div class="bc bx${done[i]?" bd":""}${inLine.has(i)?" bl":""}"><div class="bq">${esc(x.label)}</div>${c.n?`<div class="bn">${esc(c.n)}</div>`:'<div class="m">Discover something new — tap ✎ to note what you pick.</div>'}<div class="bb"><button data-bsh="${i}" title="Different challenge" aria-label="Shuffle challenge">↻</button><button data-bnt="${i}" title="Note the book you chose" aria-label="Note the book you chose">✎</button><a href="https://www.google.com/search?q=${encodeURIComponent(x.q)}" target="_blank" rel="noopener" title="Find ideas" aria-label="Find ideas">🔍</a><button data-bdn="${i}" aria-pressed="${done[i]}" title="${done[i]?"Done":"Mark as done"}" aria-label="Mark as done">✓</button></div></div>`}
     const def=bdef(c.c),b=bk[i];
     return`<div class="bc${done[i]?" bd":""}${inLine.has(i)?" bl":""}"><div class="bq">${esc(def.label)}</div>${b?`<button class="bt" data-open="${esc(b.book_id)}">${esc(b.title)}</button><div class="m">${esc(A(b.author_id).name)}</div>`:'<div class="m">No suggestion</div>'}<div class="bb"><button data-bsh="${i}" title="Suggest a different book for this square" aria-label="Shuffle suggestion">↻</button><button data-bdn="${i}" aria-pressed="${done[i]}" title="${done[i]?"Done":"Mark as done"}" aria-label="Mark as done"${b&&b.read?" disabled":""}>✓</button></div></div>`}).join("");
   const nd=done.filter(Boolean).length;
   box.innerHTML=`<div class="bar" style="margin-top:22px;justify-content:space-between"><h2 style="margin:0">${bingo.year} Reading Bingo</h2><button id="bnew">New board</button></div><p class="m" style="margin:4px 0 8px">${nd} of 25 squares done · ${lines.length} bingo line${lines.length==1?"":"s"}${lines.length?" 🎉":""}</p>${bingoNote?`<p class="m">${esc(bingoNote)}</p>`:""}<div class="bg">${html}</div>`;
 }
 function bingoShuffle(i){
-  const cells=bingo.cells,c=cells[i],def=bdef(c.c),ctx=bctx();
+  const cells=bingo.cells,c=cells[i];
+  if(String(c.c).startsWith("x:")){
+    const have=new Set(cells.map(x=>x.c)),opts=XDEFS.filter(d=>!have.has(d.id));
+    if(opts.length){c.c=rnd(opts).id;c.n="";c.d=false;saveBingo();renderBingo()}return}
+  const def=bdef(c.c),ctx=bctx();
   const skip=new Set(cells.map(x=>x.b).filter(Boolean));
   let cand=bcands(def,ctx,skip);
   if(!cand.length){bingoNote="No other suggestions for that square right now.";renderBingo();setTimeout(()=>{bingoNote=bingoLocal?bingoNote:"";renderBingo()},2500);return}
@@ -641,6 +676,7 @@ themeBtn();matchMedia("(prefers-color-scheme:dark)").addEventListener&&matchMedi
 document.addEventListener("click",async e=>{
   const t=e.target.closest("button");if(!t)return;
   if(t.dataset.bsh!==undefined){bingoShuffle(+t.dataset.bsh);return}
+  if(t.dataset.bnt!==undefined){const c=bingo.cells[+t.dataset.bnt],v=prompt("Which book (or series) did you pick for this square?",c.n||"");if(v!==null){c.n=v.trim();if(c.n)c.d=true;saveBingo();renderBingo()}return}
   if(t.dataset.bdn!==undefined){const c=bingo.cells[+t.dataset.bdn];c.d=!c.d;saveBingo();renderBingo();return}
   if(t.id=="bnew"){if(confirm("Replace this year's bingo board with a new one? Your progress on this board will be lost.")){bingo.cells=newBoard();saveBingo();renderBingo()}return}
   if(t.id=="thm"){const n=isDark()?"light":"dark";document.documentElement.setAttribute("data-theme",n);try{localStorage.setItem("theme",n)}catch(e){}themeBtn();return}
