@@ -4,7 +4,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{--bg:#faf7f2;--fg:#2a2622;--mut:#7a7168;--card:#fff;--bd:#e4ddd2;--ok:#2f7d4f;--okbg:#e3f3e9;--ac:#8a4b2a;--er:#c0392b;--yw:#FFEE8C;--ywb:#e3cf6a;--gn:#C1E1C1;--gnb:#8dbf8d;--bl:#A7C7E7;--blb:#7fa6cf;--or:#fbdcb8;--orb:#e8b27c;--rd:#f8d4d4;--rdb:#e19a9a;--onc:#2a2622;--onm:#4f5660}
-@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#1b1917;--fg:#eee8df;--mut:#a39a8e;--card:#262321;--bd:#3a3531;--ok:#6fcf97;--okbg:#1f3a2a;--ac:#e0a47e;--er:#ff8a7a;--yw:#5c5114;--ywb:#a08d2c;--gn:#2d5a3b;--gnb:#5c9a6c;--bl:#2d4c70;--blb:#5886b3;--onc:var(--fg);--onm:var(--mut);--or:#4a3319;--orb:#7a5530;--rd:#4a2222;--rdb:#844545}}:root[data-theme=dark]{--bg:#1b1917;--fg:#eee8df;--mut:#a39a8e;--card:#262321;--bd:#3a3531;--ok:#6fcf97;--okbg:#1f3a2a;--ac:#e0a47e;--er:#ff8a7a;--yw:#5c5114;--ywb:#a08d2c;--gn:#2d5a3b;--gnb:#5c9a6c;--bl:#2d4c70;--blb:#5886b3;--onc:var(--fg);--onm:var(--mut);--or:#4a3319;--orb:#7a5530;--rd:#4a2222;--rdb:#844545}:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#1b1917;--fg:#eee8df;--mut:#a39a8e;--card:#262321;--bd:#3a3531;--ok:#6fcf97;--okbg:#1f3a2a;--ac:#e0a47e;--er:#ff8a7a;--yw:#756818;--ywb:#b7a53a;--gn:#2d5a3b;--gnb:#5c9a6c;--bl:#2d4c70;--blb:#5886b3;--onc:var(--fg);--onm:#e0d9cc;--or:#4a3319;--orb:#7a5530;--rd:#4a2222;--rdb:#844545}}:root[data-theme=dark]{--bg:#1b1917;--fg:#eee8df;--mut:#a39a8e;--card:#262321;--bd:#3a3531;--ok:#6fcf97;--okbg:#1f3a2a;--ac:#e0a47e;--er:#ff8a7a;--yw:#756818;--ywb:#b7a53a;--gn:#2d5a3b;--gnb:#5c9a6c;--bl:#2d4c70;--blb:#5886b3;--onc:var(--fg);--onm:#e0d9cc;--or:#4a3319;--orb:#7a5530;--rd:#4a2222;--rdb:#844545}:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
 *{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}
 body{background:var(--bg);color:var(--fg);font:15px/1.4 Georgia,'Times New Roman',serif;padding:12px 14px 40px;max-width:900px;margin:auto}
 h1{font-size:22px;margin:4px 0 10px}h2{font-size:17px;margin:20px 0 8px;color:var(--ac)}
@@ -29,7 +29,8 @@ textarea{width:100%;min-height:70px}
 .ci img{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:4px;background:var(--bd)}
 .gg{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
 .gt{display:flex;flex-direction:column;gap:4px;padding:16px 12px;text-align:left;border-radius:12px;border-left:6px solid var(--ac)}
-.gt .gn{font-size:16px;font-weight:bold}.pb{display:block;width:100%;height:8px;border-radius:99px;background:rgba(127,127,127,.28);overflow:hidden;margin-top:8px}.pb i{display:block;height:100%;background:var(--ok);border-radius:99px}#sbtns .gt{min-height:190px}.gt .sr{display:flex;justify-content:space-between;align-items:flex-end;gap:8px;width:100%;margin-top:auto}.gt .si{display:flex;flex-direction:column;gap:4px}.gt .sr .cov{flex:none;width:56px;height:84px}.gt.own{background:var(--yw);border-top-color:var(--ywb);border-right-color:var(--ywb);border-bottom-color:var(--ywb)}.gt.wish{background:var(--bl);border-top-color:var(--blb);border-right-color:var(--blb);border-bottom-color:var(--blb)}.gt.done{background:var(--gn);border-top-color:var(--gnb);border-right-color:var(--gnb);border-bottom-color:var(--gnb)}.gt.own.wish{background:linear-gradient(to bottom right,var(--yw) 50%,var(--bl) 50%)}.row.st-done,.row.st-done .t,.gt.done,.gt.done .gn,.row.st-own,.row.st-own .t,.gt.own,.gt.own .gn,.row.st-wish,.row.st-wish .t,.gt.wish,.gt.wish .gn{color:var(--onc)}.row.st-done .m,.gt.done .m,.row.st-own .m,.gt.own .m,.row.st-wish .m,.gt.wish .m{color:var(--onm)}.gt.c{border-left-color:var(--tr)}
+.gt .gn{font-size:16px;font-weight:bold}.bg{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}.bc{display:flex;flex-direction:column;gap:3px;min-width:0;min-height:128px;padding:6px;background:var(--card);border:1px solid var(--bd);border-radius:8px;font-size:10.5px;line-height:1.25}.bc .bq{font-weight:bold;font-size:10.5px}.bc .m{font-size:10px}.bc .bt{background:none;border:0;padding:0;text-align:left;font-style:italic;font-size:11px;color:inherit;overflow-wrap:anywhere}.bc .bb{display:flex;gap:4px;margin-top:auto}.bc .bb button{padding:1px 6px;font-size:12px}.bc.bd{background:var(--gn);border-color:var(--gnb);color:var(--onc)}.bc.bd .m{color:var(--onm)}.bc.bl{box-shadow:inset 0 0 0 2px var(--ac)}@media(max-width:480px){.bc{padding:4px;font-size:9px;min-height:110px}.bc .bq{font-size:9px}.bc .bt{font-size:9.5px}.bc .m{font-size:8.5px}}
+.pb{display:block;width:100%;height:8px;border-radius:99px;background:rgba(127,127,127,.28);overflow:hidden;margin-top:8px}.pb i{display:block;height:100%;background:var(--ok);border-radius:99px}#sbtns .gt{min-height:190px}.gt .sr{display:flex;justify-content:space-between;align-items:flex-end;gap:8px;width:100%;margin-top:auto}.gt .si{display:flex;flex-direction:column;gap:4px}.gt .sr .cov{flex:none;width:56px;height:84px}.gt.own{background:var(--yw);border-top-color:var(--ywb);border-right-color:var(--ywb);border-bottom-color:var(--ywb)}.gt.wish{background:var(--bl);border-top-color:var(--blb);border-right-color:var(--blb);border-bottom-color:var(--blb)}.gt.done{background:var(--gn);border-top-color:var(--gnb);border-right-color:var(--gnb);border-bottom-color:var(--gnb)}.gt.own.wish{background:linear-gradient(to bottom right,var(--yw) 50%,var(--bl) 50%)}.row.st-done,.row.st-done .t,.gt.done,.gt.done .gn,.row.st-own,.row.st-own .t,.gt.own,.gt.own .gn,.row.st-wish,.row.st-wish .t,.gt.wish,.gt.wish .gn{color:var(--onc)}.row.st-done .m,.gt.done .m,.row.st-own .m,.gt.own .m,.row.st-wish .m,.gt.wish .m{color:var(--onm)}.gt.c{border-left-color:var(--tr)}
 #login{text-align:center;margin-top:20vh}
 </style></head><body>
 
@@ -51,6 +52,7 @@ textarea{width:100%;min-height:70px}
 <h2 style="margin-top:14px">Genres</h2>
 <div class="cnt" id="hcnt"></div>
 <div class="gg" id="genres"></div>
+<div id="bingo"></div>
 </div>
 
 <div id="listview" hidden>
@@ -98,7 +100,7 @@ async function onSession(s){
   history.replaceState({v:"home",g:null},"");go(null,false);
 }
 // Diagnostic line (safe to show: it reveals only the project address and the start of the public key)
-try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v46`}
+try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v47`}
 catch(e){$("diag").textContent=`Check: the Supabase address is not a valid web address (${JSON.stringify(SUPABASE_URL)}) · app v4`}
 if(SUPABASE_URL.startsWith("YOUR_")){showLogin("Set SUPABASE_URL and SUPABASE_ANON_KEY at the top of index.html.");$("gin").hidden=true}
 else if(!window.supabase){showLogin("Could not load the Supabase library. Check your connection.");$("gin").hidden=true}
@@ -138,7 +140,7 @@ async function load(){
   const keys={authors:"author_id",genres:"genre_id",series:"series_id",books:"book_id",book_covers:"cover_id"};
   const r=await Promise.all(Object.keys(keys).map(t=>fetchAll(t,keys[t])));
   const e=r.find(x=>x.error);if(e){msg("Load failed: "+e.error.message);return}
-  [authors,genres,series,books,covers]=r.map(x=>x.data);msg("");fill();render();
+  [authors,genres,series,books,covers]=r.map(x=>x.data);msg("");fill();render();loadBingo();
   // owned books cannot be on the Wishlist or Safe for MJG lists: tidy up any that already are
   books.filter(b=>b.owned&&(b.wishlist||b.safe_mjg)).forEach(b=>{upd(b,{wishlist:false,safe_mjg:false}).then(render)});
 }
@@ -227,7 +229,7 @@ function renderHome(){
     ?tile("","All books",books.length,books.filter(b=>b.read).length,30,books.filter(b=>b.owned).length,books.filter(b=>b.owned&&b.read).length)+gl.map(g=>tile(g.genre_id,g.name,by[g.genre_id].n,by[g.genre_id].r,hue(g.genre_id),by[g.genre_id].o,by[g.genre_id].d)).join("")
     :'<p class="m">No books yet. Use “+ Add book” or “Import CSV” to get started.</p>';
 }
-function render(){renderHome();renderList()}
+function render(){renderHome();renderList();renderBingo()}
 let special=null,filtersHidden=false;try{filtersHidden=localStorage.getItem("filtersHidden")==="1"}catch(e){}
 function go(g,push,fresh,ser){
   const home=g===null;
@@ -525,6 +527,111 @@ document.addEventListener("error",e=>{const t=e.target;if(!t||t.tagName!=="IMG")
   const ci=t.closest(".ci");if(ci){ci.remove();return}
   if(t.classList.contains("cim")){const p=t.parentElement;p.classList.remove("has");p.textContent="[Book Cover Unavailable]"}},true);
 
+/* ---------- yearly bingo ---------- */
+// 25 squares, each a reading challenge worked out from your own library, with an unread book suggested for it.
+let bingo=null,bingoNote="",bingoLocal=false;
+const rnd=a=>a[Math.floor(Math.random()*a.length)];
+const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+function bctx(){
+  const ser={},au={};
+  books.forEach(b=>{au[b.author_id]=(au[b.author_id]||0)+(b.read?1:0);if(b.series_id){const x=(ser[b.series_id]??={n:0,r:0});x.n++;if(b.read)x.r++}});
+  return{ser,au};
+}
+const BCOL=/\b(red|blue|green|black|white|gold|golden|silver|grey|gray|yellow|crimson|scarlet|violet|purple|orange|pink|amber|ivory|emerald|ruby)\b/i;
+const BNUM=/\d|\b(one|two|three|four|five|six|seven|eight|nine|ten|hundred|thousand|first|second|third)\b/i;
+const sur=b=>(((A(b.author_id)||{}).sort_name||"?")[0]||"?").toUpperCase();
+const BDEFS=[
+  {id:"first",label:"First book in a series",test:b=>b.series_id&&b.reading_order!=null&&b.reading_order<=1},
+  {id:"later",label:"Book 2 or later in a series",test:b=>b.series_id&&b.reading_order!=null&&b.reading_order>=2},
+  {id:"alone",label:"A standalone book",test:b=>!b.series_id},
+  {id:"started",label:"Continue a series you've started",test:(b,c)=>b.series_id&&c.ser[b.series_id].r>0},
+  {id:"finish",label:"Finish off a series",test:(b,c)=>b.series_id&&c.ser[b.series_id].r>0&&c.ser[b.series_id].n-c.ser[b.series_id].r==1},
+  {id:"long",label:"From a series of 5+ books",test:(b,c)=>b.series_id&&c.ser[b.series_id].n>=5},
+  {id:"y1",label:"Published before 1950",test:b=>b.publication_year&&b.publication_year<1950},
+  {id:"y2",label:"Published 1950–1999",test:b=>b.publication_year>=1950&&b.publication_year<2000},
+  {id:"y3",label:"Published 2000–2009",test:b=>b.publication_year>=2000&&b.publication_year<2010},
+  {id:"y4",label:"Published 2010 or later",test:b=>b.publication_year>=2010},
+  {id:"owned",label:"A book from your shelf",test:b=>b.owned},
+  {id:"tbr",label:"A book from your TBR",test:b=>b.tbr},
+  {id:"mjg",label:"A book that's safe for MJG",test:b=>b.safe_mjg},
+  {id:"newau",label:"An author you haven't read yet",test:(b,c)=>!c.au[b.author_id]},
+  {id:"oldau",label:"An author you've read before",test:(b,c)=>c.au[b.author_id]>0},
+  {id:"s1",label:"Author surname A–F",test:b=>sur(b)>="A"&&sur(b)<="F"},
+  {id:"s2",label:"Author surname G–M",test:b=>sur(b)>="G"&&sur(b)<="M"},
+  {id:"s3",label:"Author surname N–S",test:b=>sur(b)>="N"&&sur(b)<="S"},
+  {id:"s4",label:"Author surname T–Z",test:b=>sur(b)>="T"&&sur(b)<="Z"},
+  {id:"the",label:"Title starts with “The”",test:b=>/^the\s/i.test(b.title)},
+  {id:"one",label:"A one-word title",test:b=>b.title.trim().split(/\s+/).length==1},
+  {id:"five",label:"A title with 5+ words",test:b=>b.title.trim().split(/\s+/).length>=5},
+  {id:"col",label:"A colour in the title",test:b=>BCOL.test(b.title)},
+  {id:"of",label:"“of” in the title",test:b=>/\bof\b/i.test(b.title)},
+  {id:"num",label:"A number in the title",test:b=>BNUM.test(b.title)},
+  {id:"any",label:"Any book you fancy",test:()=>true}
+];
+function bdef(id){
+  if(id.startsWith("g:")){const gid=id.slice(2),g=genres.find(x=>x.genre_id==gid);return g?{id,label:"A "+g.name+" book",test:b=>b.genre_id==gid}:BDEFS.find(d=>d.id=="any")}
+  return BDEFS.find(d=>d.id==id)||BDEFS.find(d=>d.id=="any");
+}
+function bcands(def,ctx,skip){
+  const all=books.filter(b=>!b.read&&!skip.has(b.book_id)&&def.test(b,ctx));
+  const pref=all.filter(b=>b.owned||b.tbr);return pref.length?pref:all;
+}
+function newBoard(){
+  const ctx=bctx(),cells=[],used=new Set();
+  const genreDefs=shuf(genres.map(g=>bdef("g:"+g.genre_id))).slice(0,5);
+  const pool=shuf(BDEFS.filter(d=>d.id!="any").concat(genreDefs));
+  for(const d of pool){
+    if(cells.length>=25)break;
+    const c=bcands(d,ctx,used);if(!c.length)continue;
+    const b=rnd(c);used.add(b.book_id);cells.push({c:d.id,b:b.book_id,d:false});
+  }
+  while(cells.length<25){
+    const c=bcands(bdef("any"),ctx,used),b=c.length?rnd(c):null;
+    if(b)used.add(b.book_id);cells.push({c:"any",b:b?b.book_id:null,d:false});
+  }
+  return shuf(cells);
+}
+async function saveBingo(){
+  if(!bingo)return;
+  try{localStorage.setItem("bingo_"+bingo.year,JSON.stringify(bingo.cells))}catch(e){}
+  if(bingoLocal)return;
+  const r=await sb.from("bingo_boards").upsert({user_id:uid,year:bingo.year,cells:bingo.cells},{onConflict:"user_id,year"});
+  if(r.error){bingoLocal=true;bingoNote="Saved on this device only. Run the bingo SQL in Supabase to keep it in sync across devices.";renderBingo()}
+}
+async function loadBingo(){
+  const year=new Date().getFullYear();let cells=null;
+  const r=await sb.from("bingo_boards").select("cells").eq("year",year).maybeSingle();
+  if(r.error){bingoLocal=true;bingoNote="Saved on this device only. Run the bingo SQL in Supabase to keep it in sync across devices.";
+    try{cells=JSON.parse(localStorage.getItem("bingo_"+year))}catch(e){}}
+  else if(r.data)cells=r.data.cells;
+  if(!Array.isArray(cells)||cells.length!=25){if(!books.length)return;cells=newBoard();bingo={year,cells};await saveBingo()}
+  bingo={year,cells};renderBingo();
+}
+function bingoLines(done){
+  const L=[];for(let i=0;i<5;i++){L.push([0,1,2,3,4].map(j=>i*5+j));L.push([0,1,2,3,4].map(j=>j*5+i))}
+  L.push([0,6,12,18,24]);L.push([4,8,12,16,20]);
+  return L.filter(l=>l.every(i=>done[i]));
+}
+function renderBingo(){
+  const box=$("bingo");if(!box)return;
+  if(!bingo){box.innerHTML="";return}
+  const cells=bingo.cells,bk=cells.map(c=>books.find(b=>b.book_id==c.b)||null);
+  const done=cells.map((c,i)=>!!c.d||!!(bk[i]&&bk[i].read));
+  const lines=bingoLines(done),inLine=new Set(lines.flat());
+  const html=cells.map((c,i)=>{
+    const def=bdef(c.c),b=bk[i];
+    return`<div class="bc${done[i]?" bd":""}${inLine.has(i)?" bl":""}"><div class="bq">${esc(def.label)}</div>${b?`<button class="bt" data-open="${esc(b.book_id)}">${esc(b.title)}</button><div class="m">${esc(A(b.author_id).name)}</div>`:'<div class="m">No suggestion</div>'}<div class="bb"><button data-bsh="${i}" title="Suggest a different book for this square" aria-label="Shuffle suggestion">↻</button><button data-bdn="${i}" aria-pressed="${done[i]}" title="${done[i]?"Done":"Mark as done"}" aria-label="Mark as done"${b&&b.read?" disabled":""}>✓</button></div></div>`}).join("");
+  const nd=done.filter(Boolean).length;
+  box.innerHTML=`<div class="bar" style="margin-top:22px;justify-content:space-between"><h2 style="margin:0">${bingo.year} Reading Bingo</h2><button id="bnew">New board</button></div><p class="m" style="margin:4px 0 8px">${nd} of 25 squares done · ${lines.length} bingo line${lines.length==1?"":"s"}${lines.length?" 🎉":""}</p>${bingoNote?`<p class="m">${esc(bingoNote)}</p>`:""}<div class="bg">${html}</div>`;
+}
+function bingoShuffle(i){
+  const cells=bingo.cells,c=cells[i],def=bdef(c.c),ctx=bctx();
+  const skip=new Set(cells.map(x=>x.b).filter(Boolean));
+  let cand=bcands(def,ctx,skip);
+  if(!cand.length){bingoNote="No other suggestions for that square right now.";renderBingo();setTimeout(()=>{bingoNote=bingoLocal?bingoNote:"";renderBingo()},2500);return}
+  c.b=rnd(cand).book_id;c.d=false;saveBingo();renderBingo();
+}
+
 /* ---------- light / dark mode ---------- */
 const isDark=()=>{const t=document.documentElement.getAttribute("data-theme");return t?t==="dark":matchMedia("(prefers-color-scheme:dark)").matches};
 function themeBtn(){$("thm").textContent=isDark()?"☀ Light mode":"🌙 Dark mode"}
@@ -533,6 +640,9 @@ themeBtn();matchMedia("(prefers-color-scheme:dark)").addEventListener&&matchMedi
 /* ---------- events ---------- */
 document.addEventListener("click",async e=>{
   const t=e.target.closest("button");if(!t)return;
+  if(t.dataset.bsh!==undefined){bingoShuffle(+t.dataset.bsh);return}
+  if(t.dataset.bdn!==undefined){const c=bingo.cells[+t.dataset.bdn];c.d=!c.d;saveBingo();renderBingo();return}
+  if(t.id=="bnew"){if(confirm("Replace this year's bingo board with a new one? Your progress on this board will be lost.")){bingo.cells=newBoard();saveBingo();renderBingo()}return}
   if(t.id=="thm"){const n=isDark()?"light":"dark";document.documentElement.setAttribute("data-theme",n);try{localStorage.setItem("theme",n)}catch(e){}themeBtn();return}
   if(t.id=="ftog"){filtersHidden=!filtersHidden;try{localStorage.setItem("filtersHidden",filtersHidden?"1":"0")}catch(e){}render();return}
   if(t.dataset.ser!==undefined){go(special?"__"+special:$("fg").value,true,false,t.dataset.ser);return}
