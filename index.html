@@ -3,8 +3,8 @@
 <title>Reading List</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{--bg:#faf7f2;--fg:#2a2622;--mut:#7a7168;--card:#fff;--bd:#e4ddd2;--ok:#2f7d4f;--okbg:#e3f3e9;--ac:#8a4b2a;--er:#c0392b;--yw:#fff0a0;--ywb:#ead35a;--gn:#dcf1e1;--gnb:#9fcfae;--bl:#e8f1fd;--blb:#b6cdee;--or:#fbdcb8;--orb:#e8b27c;--rd:#f8d4d4;--rdb:#e19a9a}
-@media(prefers-color-scheme:dark){:root{--bg:#1b1917;--fg:#eee8df;--mut:#a39a8e;--card:#262321;--bd:#3a3531;--ok:#6fcf97;--okbg:#1f3a2a;--ac:#e0a47e;--er:#ff8a7a;--yw:#4a4311;--ywb:#8c7b24;--gn:#1d3a29;--gnb:#2f6a46;--bl:#23395c;--blb:#41649a;--or:#4a3319;--orb:#7a5530;--rd:#4a2222;--rdb:#844545}}
+:root{--bg:#faf7f2;--fg:#2a2622;--mut:#7a7168;--card:#fff;--bd:#e4ddd2;--ok:#2f7d4f;--okbg:#e3f3e9;--ac:#8a4b2a;--er:#c0392b;--yw:#fff5bf;--ywb:#eedc8a;--gn:#dcf1e1;--gnb:#9fcfae;--bl:#e8f1fd;--blb:#b6cdee;--or:#fbdcb8;--orb:#e8b27c;--rd:#f8d4d4;--rdb:#e19a9a}
+@media(prefers-color-scheme:dark){:root{--bg:#1b1917;--fg:#eee8df;--mut:#a39a8e;--card:#262321;--bd:#3a3531;--ok:#6fcf97;--okbg:#1f3a2a;--ac:#e0a47e;--er:#ff8a7a;--yw:#413a14;--ywb:#7a6b2a;--gn:#1d3a29;--gnb:#2f6a46;--bl:#23395c;--blb:#41649a;--or:#4a3319;--orb:#7a5530;--rd:#4a2222;--rdb:#844545}}
 *{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}
 body{background:var(--bg);color:var(--fg);font:15px/1.4 Georgia,'Times New Roman',serif;padding:12px 14px 40px;max-width:900px;margin:auto}
 h1{font-size:22px;margin:4px 0 10px}h2{font-size:17px;margin:20px 0 8px;color:var(--ac)}
@@ -98,7 +98,7 @@ async function onSession(s){
   history.replaceState({v:"home",g:null},"");go(null,false);
 }
 // Diagnostic line (safe to show: it reveals only the project address and the start of the public key)
-try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v38`}
+try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v39`}
 catch(e){$("diag").textContent=`Check: the Supabase address is not a valid web address (${JSON.stringify(SUPABASE_URL)}) · app v4`}
 if(SUPABASE_URL.startsWith("YOUR_")){showLogin("Set SUPABASE_URL and SUPABASE_ANON_KEY at the top of index.html.");$("gin").hidden=true}
 else if(!window.supabase){showLogin("Could not load the Supabase library. Check your connection.");$("gin").hidden=true}
@@ -261,7 +261,7 @@ function renderSeriesBtns(){
   const ids=Object.keys(by).sort((x,y)=>S(x).name.localeCompare(S(y).name));
   const first=id=>sc.filter(b=>b.series_id==id).sort((x,y)=>(x.reading_order??1e9)-(y.reading_order??1e9)||x.title.localeCompare(y.title))[0];
   const col=(gid,name)=>tileColor(name)||`" style="border-left-color:hsl(${hue(gid)} 45% 45%)`;
-  const t=(v,l,x,f,gc)=>`<button class="gt${x.d==x.n?" done":(x.o?" own":"")+(x.w?" wish":"")}${gc}" data-ser="${esc(v)}"><span class="gn">${esc(l)}</span><span class="sr"><span class="si"><span class="m">${x.n} book${x.n==1?"":"s"}</span><span class="m">${x.o} owned</span><span class="m">${x.r} read</span></span>${f?coverBox(f):""}</span></button>`;
+  const t=(v,l,x,f,gc)=>`<button class="gt${x.d==x.n?" done":(x.o?" own":"")+(x.w&&special!="wishlist"?" wish":"")}${gc}" data-ser="${esc(v)}"><span class="gn">${esc(l)}</span><span class="sr"><span class="si"><span class="m">${x.n} book${x.n==1?"":"s"}</span><span class="m">${x.o} owned</span><span class="m">${x.r} read</span></span>${f?coverBox(f):""}</span></button>`;
   box.innerHTML=ids.map(i=>t(i,S(i).name,by[i],first(i),col(gen[i],G(gen[i]).name))).join("")+(alone.n?t("__s","Standalone",alone,null,special?tileColor(special=="mjg"?"Safe for MJG":"Wishlist"):col(g,G(g).name)):"");
 }
 function renderList(){
