@@ -3,15 +3,15 @@
 <title>Reading List</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{--bg:#faf7f2;--fg:#2a2622;--mut:#7a7168;--card:#fff;--bd:#e4ddd2;--ok:#2f7d4f;--okbg:#e3f3e9;--ac:#8a4b2a;--er:#c0392b;--yw:#FFEE8C;--ywb:#e3cf6a;--gn:#C1E1C1;--gnb:#8dbf8d;--bl:#A7C7E7;--blb:#7fa6cf;--or:#fbdcb8;--orb:#e8b27c;--rd:#f8d4d4;--rdb:#e19a9a}
-@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#1b1917;--fg:#eee8df;--mut:#a39a8e;--card:#262321;--bd:#3a3531;--ok:#6fcf97;--okbg:#1f3a2a;--ac:#e0a47e;--er:#ff8a7a;--yw:#FFEE8C;--ywb:#d6c35a;--gn:#C1E1C1;--gnb:#8dbf8d;--bl:#A7C7E7;--blb:#7fa6cf;--or:#4a3319;--orb:#7a5530;--rd:#4a2222;--rdb:#844545}}:root[data-theme=dark]{--bg:#1b1917;--fg:#eee8df;--mut:#a39a8e;--card:#262321;--bd:#3a3531;--ok:#6fcf97;--okbg:#1f3a2a;--ac:#e0a47e;--er:#ff8a7a;--yw:#FFEE8C;--ywb:#d6c35a;--gn:#C1E1C1;--gnb:#8dbf8d;--bl:#A7C7E7;--blb:#7fa6cf;--or:#4a3319;--orb:#7a5530;--rd:#4a2222;--rdb:#844545}:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+:root{--bg:#faf7f2;--fg:#2a2622;--mut:#7a7168;--card:#fff;--bd:#e4ddd2;--ok:#2f7d4f;--okbg:#e3f3e9;--ac:#8a4b2a;--er:#c0392b;--yw:#FFEE8C;--ywb:#e3cf6a;--gn:#C1E1C1;--gnb:#8dbf8d;--bl:#A7C7E7;--blb:#7fa6cf;--or:#fbdcb8;--orb:#e8b27c;--rd:#f8d4d4;--rdb:#e19a9a;--onc:#2a2622;--onm:#4f5660}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#1b1917;--fg:#eee8df;--mut:#a39a8e;--card:#262321;--bd:#3a3531;--ok:#6fcf97;--okbg:#1f3a2a;--ac:#e0a47e;--er:#ff8a7a;--yw:#5c5114;--ywb:#a08d2c;--gn:#2d5a3b;--gnb:#5c9a6c;--bl:#2d4c70;--blb:#5886b3;--onc:var(--fg);--onm:var(--mut);--or:#4a3319;--orb:#7a5530;--rd:#4a2222;--rdb:#844545}}:root[data-theme=dark]{--bg:#1b1917;--fg:#eee8df;--mut:#a39a8e;--card:#262321;--bd:#3a3531;--ok:#6fcf97;--okbg:#1f3a2a;--ac:#e0a47e;--er:#ff8a7a;--yw:#5c5114;--ywb:#a08d2c;--gn:#2d5a3b;--gnb:#5c9a6c;--bl:#2d4c70;--blb:#5886b3;--onc:var(--fg);--onm:var(--mut);--or:#4a3319;--orb:#7a5530;--rd:#4a2222;--rdb:#844545}:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
 *{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}
 body{background:var(--bg);color:var(--fg);font:15px/1.4 Georgia,'Times New Roman',serif;padding:12px 14px 40px;max-width:900px;margin:auto}
 h1{font-size:22px;margin:4px 0 10px}h2{font-size:17px;margin:20px 0 8px;color:var(--ac)}
 .bar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.top{align-items:center;justify-content:space-between}
 input,select,textarea,button{font:inherit;font-size:14px;color:var(--fg);background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:7px 9px;max-width:100%}
 input[type=search]{flex:1 1 100%}select{flex:1 1 130px}
-button{cursor:pointer}button[aria-pressed=true]{background:var(--okbg);border-color:var(--ok);color:var(--ok)}button[data-f=read][aria-pressed=true]{background:var(--gn);border-color:var(--gnb);color:#2a2622}button[data-f=safe_mjg][aria-pressed=true]{background:var(--or);border-color:var(--orb);color:var(--fg)}button[data-f=owned][aria-pressed=true]{background:var(--yw);border-color:var(--ywb);color:#2a2622}button[data-f=wishlist][aria-pressed=true]{background:var(--bl);border-color:var(--blb);color:#2a2622}button[data-f=tbr][aria-pressed=true]{background:var(--rd);border-color:var(--rdb);color:var(--fg)}
+button{cursor:pointer}button[aria-pressed=true]{background:var(--okbg);border-color:var(--ok);color:var(--ok)}button[data-f=read][aria-pressed=true]{background:var(--gn);border-color:var(--gnb);color:var(--onc)}button[data-f=safe_mjg][aria-pressed=true]{background:var(--or);border-color:var(--orb);color:var(--fg)}button[data-f=owned][aria-pressed=true]{background:var(--yw);border-color:var(--ywb);color:var(--onc)}button[data-f=wishlist][aria-pressed=true]{background:var(--bl);border-color:var(--blb);color:var(--onc)}button[data-f=tbr][aria-pressed=true]{background:var(--rd);border-color:var(--rdb);color:var(--fg)}
 .cnt{color:var(--mut);font-size:13px;margin:4px 0}.err{color:var(--er)}
 .row{display:flex;gap:12px;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:10px;margin-bottom:8px}
 .cov{flex:0 0 56px;height:84px;border-radius:5px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:9px;padding:3px;color:#fff;overflow:hidden}
@@ -27,9 +27,9 @@ textarea{width:100%;min-height:70px}
 .cg{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;margin:10px 0}
 .ci{display:flex;flex-direction:column;gap:3px;padding:4px;text-align:left;font-size:11px;color:var(--mut)}
 .ci img{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:4px;background:var(--bd)}
-.gg{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.gg{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
 .gt{display:flex;flex-direction:column;gap:4px;padding:16px 12px;text-align:left;border-radius:12px;border-left:6px solid var(--ac)}
-.gt .gn{font-size:16px;font-weight:bold}#sbtns{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}#sbtns .gt{min-height:190px}.gt .sr{display:flex;justify-content:space-between;align-items:flex-end;gap:8px;width:100%;margin-top:auto}.gt .si{display:flex;flex-direction:column;gap:4px}.gt .sr .cov{flex:none;width:56px;height:84px}.gt.own{background:var(--yw);border-top-color:var(--ywb);border-right-color:var(--ywb);border-bottom-color:var(--ywb)}.gt.wish{background:var(--bl);border-top-color:var(--blb);border-right-color:var(--blb);border-bottom-color:var(--blb)}.gt.done{background:var(--gn);border-top-color:var(--gnb);border-right-color:var(--gnb);border-bottom-color:var(--gnb)}.gt.own.wish{background:linear-gradient(to bottom right,var(--yw) 50%,var(--bl) 50%)}.row.st-done,.row.st-done .t,.gt.done,.gt.done .gn,.row.st-own,.row.st-own .t,.gt.own,.gt.own .gn,.row.st-wish,.row.st-wish .t,.gt.wish,.gt.wish .gn{color:#2a2622}.row.st-done .m,.gt.done .m,.row.st-own .m,.gt.own .m,.row.st-wish .m,.gt.wish .m{color:#4f5660}.gt.c{border-left-color:var(--tr)}
+.gt .gn{font-size:16px;font-weight:bold}.pb{display:block;width:100%;height:8px;border-radius:99px;background:rgba(127,127,127,.28);overflow:hidden;margin-top:8px}.pb i{display:block;height:100%;background:var(--ok);border-radius:99px}#sbtns .gt{min-height:190px}.gt .sr{display:flex;justify-content:space-between;align-items:flex-end;gap:8px;width:100%;margin-top:auto}.gt .si{display:flex;flex-direction:column;gap:4px}.gt .sr .cov{flex:none;width:56px;height:84px}.gt.own{background:var(--yw);border-top-color:var(--ywb);border-right-color:var(--ywb);border-bottom-color:var(--ywb)}.gt.wish{background:var(--bl);border-top-color:var(--blb);border-right-color:var(--blb);border-bottom-color:var(--blb)}.gt.done{background:var(--gn);border-top-color:var(--gnb);border-right-color:var(--gnb);border-bottom-color:var(--gnb)}.gt.own.wish{background:linear-gradient(to bottom right,var(--yw) 50%,var(--bl) 50%)}.row.st-done,.row.st-done .t,.gt.done,.gt.done .gn,.row.st-own,.row.st-own .t,.gt.own,.gt.own .gn,.row.st-wish,.row.st-wish .t,.gt.wish,.gt.wish .gn{color:var(--onc)}.row.st-done .m,.gt.done .m,.row.st-own .m,.gt.own .m,.row.st-wish .m,.gt.wish .m{color:var(--onm)}.gt.c{border-left-color:var(--tr)}
 #login{text-align:center;margin-top:20vh}
 </style></head><body>
 
@@ -98,7 +98,7 @@ async function onSession(s){
   history.replaceState({v:"home",g:null},"");go(null,false);
 }
 // Diagnostic line (safe to show: it reveals only the project address and the start of the public key)
-try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v45`}
+try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v46`}
 catch(e){$("diag").textContent=`Check: the Supabase address is not a valid web address (${JSON.stringify(SUPABASE_URL)}) · app v4`}
 if(SUPABASE_URL.startsWith("YOUR_")){showLogin("Set SUPABASE_URL and SUPABASE_ANON_KEY at the top of index.html.");$("gin").hidden=true}
 else if(!window.supabase){showLogin("Could not load the Supabase library. Check your connection.");$("gin").hidden=true}
@@ -215,15 +215,16 @@ const TILE={wishlist:["#A7C7E7","#A7C7E7","#1d2b3f"],tbr:["#f8d4d4","#e08a8a","#
   "murder mystery":["#8e1b1b","#8e1b1b","#fbeaea"],romantasy:["#f7d3e1","#e29ab9","#42202f"],"sci-fi":["#fbefb8","#dcc766","#3a3210"],"safe for mjg":["#fbdcb8","#ee9f55","#3a2410"]};
 const ALIAS={"action & adventure":"action/adventure","action and adventure":"action/adventure","action adventure":"action/adventure","childhood":"childhood books","comics":"comics/manga","manga":"comics/manga","comics & manga":"comics/manga","murder mysteries":"murder mystery","mystery":"murder mystery","sci fi":"sci-fi","scifi":"sci-fi","science fiction":"sci-fi","sf":"sci-fi","classic":"classics"};
 function tileColor(name){const k=String(name).trim().toLowerCase(),c=TILE[ALIAS[k]||k];return c?` c" style="--tb:${c[0]};--tr:${c[1]};--tc:${c[2]}`:""}
+const pbar=(d,o)=>`<span class="pb" role="progressbar" aria-valuemin="0" aria-valuemax="${o}" aria-valuenow="${d}" aria-label="${d} of ${o} owned books read" title="${d} of ${o} owned books read"><i style="width:${o?Math.round(100*d/o):0}%"></i></span>`;
 function renderHome(){
-  const by={};books.forEach(b=>{const x=(by[b.genre_id]??={n:0,r:0,o:0});x.n++;if(b.read)x.r++;if(b.owned)x.o++});
+  const by={};books.forEach(b=>{const x=(by[b.genre_id]??={n:0,r:0,o:0,d:0});x.n++;if(b.read)x.r++;if(b.owned)x.o++;if(b.owned&&b.read)x.d++});
   const gl=genres.filter(g=>by[g.genre_id]).sort((x,y)=>x.name.localeCompare(y.name));
-  const tile=(id,name,n,r,h,o)=>`<button class="gt${tileColor(name)||(id===""?`" style="border-left-color:var(--card)`:`" style="border-left-color:hsl(${h} 45% 45%)`)}" data-genre="${esc(id)}"><span class="gn">${esc(name)}</span><span class="m">${n} book${n==1?"":"s"}</span><span class="m">${o} owned</span><span class="m">${r} read</span></button>`;
+  const tile=(id,name,n,r,h,o,d)=>`<button class="gt${tileColor(name)||(id===""?`" style="border-left-color:var(--card)`:`" style="border-left-color:hsl(${h} 45% 45%)`)}" data-genre="${esc(id)}"><span class="gn">${esc(name)}</span><span class="m">${n} book${n==1?"":"s"}</span><span class="m">${o} owned</span><span class="m">${r} read</span>${pbar(d,o)}</button>`;
   const sp=(id,name,n,h)=>`<button class="gt${tileColor(name)}" data-genre="${id}"><span class="gn">${name}</span><span class="m">${n} book${n==1?"":"s"}</span></button>`;
   $("lists").innerHTML=sp("__wishlist","Wishlist",books.filter(b=>b.wishlist&&!b.owned).length,340)+sp("__tbr","TBR",books.filter(b=>b.tbr).length,200)+sp("__mjg","Safe for MJG",books.filter(b=>b.safe_mjg&&!b.owned).length,30);
   $("hcnt").textContent=books.length?`${books.length} book${books.length==1?"":"s"} in ${gl.length} genre${gl.length==1?"":"s"}`:"";
   $("genres").innerHTML=books.length
-    ?tile("","All books",books.length,books.filter(b=>b.read).length,30,books.filter(b=>b.owned).length)+gl.map(g=>tile(g.genre_id,g.name,by[g.genre_id].n,by[g.genre_id].r,hue(g.genre_id),by[g.genre_id].o)).join("")
+    ?tile("","All books",books.length,books.filter(b=>b.read).length,30,books.filter(b=>b.owned).length,books.filter(b=>b.owned&&b.read).length)+gl.map(g=>tile(g.genre_id,g.name,by[g.genre_id].n,by[g.genre_id].r,hue(g.genre_id),by[g.genre_id].o,by[g.genre_id].d)).join("")
     :'<p class="m">No books yet. Use “+ Add book” or “Import CSV” to get started.</p>';
 }
 function render(){renderHome();renderList()}
@@ -261,7 +262,7 @@ function renderSeriesBtns(){
   const ids=Object.keys(by).sort((x,y)=>S(x).name.localeCompare(S(y).name));
   const first=id=>sc.filter(b=>b.series_id==id).sort((x,y)=>(x.reading_order??1e9)-(y.reading_order??1e9)||x.title.localeCompare(y.title))[0];
   const col=(gid,name)=>tileColor(name)||`" style="border-left-color:hsl(${hue(gid)} 45% 45%)`;
-  const t=(v,l,x,f,gc)=>`<button class="gt${x.d==x.n?" done":(x.o?" own":"")+(x.w&&special!="wishlist"?" wish":"")}${gc}" data-ser="${esc(v)}"><span class="gn">${esc(l)}</span><span class="sr"><span class="si"><span class="m">${x.n} book${x.n==1?"":"s"}</span><span class="m">${x.o} owned</span><span class="m">${x.r} read</span></span>${f?coverBox(f):""}</span></button>`;
+  const t=(v,l,x,f,gc)=>`<button class="gt${x.d==x.n?" done":(x.o?" own":"")+(x.w&&special!="wishlist"?" wish":"")}${gc}" data-ser="${esc(v)}"><span class="gn">${esc(l)}</span><span class="sr"><span class="si"><span class="m">${x.n} book${x.n==1?"":"s"}</span><span class="m">${x.o} owned</span><span class="m">${x.r} read</span></span>${f?coverBox(f):""}</span>${pbar(x.d,x.o)}</button>`;
   box.innerHTML=ids.map(i=>t(i,S(i).name,by[i],first(i),col(gen[i],G(gen[i]).name))).join("")+(alone.n?t("__s","Standalone",alone,null,special?tileColor(special=="mjg"?"Safe for MJG":"Wishlist"):col(g,G(g).name)):"");
 }
 function renderList(){
