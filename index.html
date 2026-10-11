@@ -104,7 +104,7 @@ async function onSession(s){
   loadCols();history.replaceState({v:"land"},"");showLand(false);
 }
 // Diagnostic line (safe to show: it reveals only the project address and the start of the public key)
-try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v60`}
+try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v61`}
 catch(e){$("diag").textContent=`Check: the Supabase address is not a valid web address (${JSON.stringify(SUPABASE_URL)}) · app v4`}
 if(SUPABASE_URL.startsWith("YOUR_")){showLogin("Set SUPABASE_URL and SUPABASE_ANON_KEY at the top of index.html.");$("gin").hidden=true}
 else if(!window.supabase){showLogin("Could not load the Supabase library. Check your connection.");$("gin").hidden=true}
@@ -719,7 +719,7 @@ const CFG={
       {k:"number",l:"Series number",ph:"e.g. 443",half:1},
       {k:"variant",l:"Variant",half:1,list:["Standard","Chase","Glow in the Dark","Metallic","Flocked","Diamond","Chrome","Translucent","Glitter","Blacklight","Scented","Pearlescent","Signed","Black & white"]},
       {k:"notes",l:"Notes",t:"area"}],
-    f1:{k:"variant",l:"Variant"},
+    f1:{k:"variant",l:"Variant"},replaceOnImport:true,
     dupe:o=>[o.series,o.name,o.number,o.variant].map(x=>String(x||"").trim().toLowerCase()).join("|"),
     group:o=>{const s=String(o.series||"").trim()||"No series";return{key:s.toLowerCase(),label:s,sort:0}},
     title_of:o=>o.name,
@@ -1060,7 +1060,7 @@ function cexp(k){
 }
 function cimp(k){
   const c=CFG[k],d=$("xm");
-  d.innerHTML=`<h2 style="margin-top:0">Import ${esc(c.title)} CSV</h2><p class="m">Column names should match: <code>${csvKeys(k).join(", ")}</code> (labels like “${esc(c.fields[0].l)}” also work). Required: ${c.fields.filter(f=>f.req).map(f=>f.k).join(", ")}. Rows that match an existing entry are skipped, so it's safe to import the same file twice.</p><input type="file" id="xm_f" accept=".csv,text/csv"><div id="xm_r" class="m" role="status" style="margin-top:10px"></div><div class="tg" style="margin-top:12px"><button id="xm_c">Close</button></div>`;
+  d.innerHTML=`<h2 style="margin-top:0">Import ${esc(c.title)} CSV</h2><p class="m">Column names should match: <code>${csvKeys(k).join(", ")}</code> (labels like “${esc(c.fields[0].l)}” also work). Required: ${c.fields.filter(f=>f.req).map(f=>f.k).join(", ")}. ${c.replaceOnImport?"<strong>The file replaces everything currently in this collection.</strong> Pictures are kept for Pops that appear in both.":"Rows that match an existing entry are skipped, so it's safe to import the same file twice."}</p><input type="file" id="xm_f" accept=".csv,text/csv"><div id="xm_r" class="m" role="status" style="margin-top:10px"></div><div class="tg" style="margin-top:12px"><button id="xm_c">Close</button></div>`;
   d.showModal();$("xm_c").onclick=()=>d.close();
   $("xm_f").onchange=e=>{
     const f=e.target.files[0];if(!f)return;const rd=new FileReader();
@@ -1069,7 +1069,7 @@ function cimp(k){
       const rows=parseCSV(String(rd.result));if(rows.length<2){out.textContent="No rows found.";return}
       const map={};csvFields(k).forEach(f=>{map[f.k]=f.k;map[hnorm(f.l)]=f.k});["owned","wishlist","image_url"].forEach(x=>map[x]=x);
       const cols=rows[0].map(h=>map[hnorm(h)]||null);
-      const seen=new Set(CD[k].map(o=>c.dupe(o)));const add=[],errs=[];let skipped=0;
+      const rep=!!c.replaceOnImport,old=CD[k].slice(),oldImg=new Map(old.filter(o=>o.image_url).map(o=>[c.dupe(o),o.image_url])),seen=new Set(rep?[]:CD[k].map(o=>c.dupe(o)));const add=[],errs=[];let skipped=0;
       rows.slice(1).forEach((r,i)=>{
         const o={},es=[];
         cols.forEach((key,j)=>{if(!key)return;const raw=r[j];
@@ -1079,14 +1079,24 @@ function cimp(k){
         c.fields.forEach(f=>{if(f.req&&o[f.k]==null)es.push(f.l+" is required")});
         if(es.length){errs.push(`Row ${i+2}: ${es.join("; ")}`);return}
         if(o.owned===undefined)o.owned=true;cnormalize(k,o);
-        const key=c.dupe(o);if(seen.has(key)){skipped++;return}seen.add(key);add.push(o)});
-      let ok=0;
+        const key=c.dupe(o);if(seen.has(key)){skipped++;return}seen.add(key);if(rep&&!o.image_url&&oldImg.has(key))o.image_url=oldImg.get(key);add.push(o)});
+      if(rep){
+        if(!add.length){out.innerHTML=`Nothing was imported, so your existing ${esc(c.title)} were left alone.${errs.length?`<br>${errs.slice(0,10).map(esc).join("<br>")}`:""}`;return}
+        if(!confirm(`Replace all ${old.length} existing ${c.title} with the ${add.length} from this file? This can't be undone.`)){out.textContent="Import cancelled. Nothing was changed.";return}
+      }
+      let ok=0,failed=false;
       for(let i=0;i<add.length;i+=100){
         const{data,error}=await sb.from(c.table).insert(add.slice(i,i+100)).select();
-        if(error){errs.push("Save failed: "+error.message);break}
+        if(error){errs.push("Save failed: "+error.message);failed=true;break}
         CD[k].push(...data);ok+=data.length;
       }
-      out.innerHTML=`<strong>Added ${ok}</strong>, skipped ${skipped} existing, ${errs.length} problem${errs.length==1?"":"s"}.${errs.length?`<br>${errs.slice(0,10).map(esc).join("<br>")}${errs.length>10?"<br>…":""}`:""}`;
+      let removed=0;
+      if(rep&&!failed){
+        const ids=old.map(o=>o[c.id]);
+        for(let i=0;i<ids.length;i+=100){const{error}=await sb.from(c.table).delete().in(c.id,ids.slice(i,i+100));if(error){errs.push("Could not remove old entries: "+error.message);break}removed+=Math.min(100,ids.length-i)}
+        const gone=new Set(old.map(o=>o[c.id]));if(removed>=ids.length)CD[k]=CD[k].filter(o=>!gone.has(o[c.id]));
+      }
+      out.innerHTML=`<strong>Added ${ok}</strong>${rep?`, replaced ${removed} old entr${removed==1?"y":"ies"}`:`, skipped ${skipped} existing`}${rep&&skipped?`, ${skipped} duplicate row${skipped==1?"":"s"} in the file ignored`:""}, ${errs.length} problem${errs.length==1?"":"s"}.${errs.length?`<br>${errs.slice(0,10).map(esc).join("<br>")}${errs.length>10?"<br>…":""}`:""}`;
       refreshCol();
     };rd.readAsText(f);
   };
