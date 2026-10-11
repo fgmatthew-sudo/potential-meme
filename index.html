@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><script>try{var t=localStorage.getItem("theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>My Collections</title>
+<title>GFG Collections</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{--bg:#faf7f2;--fg:#2a2622;--mut:#7a7168;--card:#fff;--bd:#e4ddd2;--ok:#2f7d4f;--okbg:#e3f3e9;--ac:#8a4b2a;--er:#c0392b;--yw:#FFEE8C;--ywb:#e3cf6a;--gn:#C1E1C1;--gnb:#8dbf8d;--bl:#A7C7E7;--blb:#7fa6cf;--or:#fbdcb8;--orb:#e8b27c;--rd:#f8d4d4;--rdb:#e19a9a;--onc:#2a2622;--onm:#4f5660}
@@ -35,7 +35,7 @@ textarea{width:100%;min-height:70px}
 </style></head><body>
 
 <div id="login" hidden>
-<h1>🗂 My Collections</h1>
+<h1>GFG Collections</h1>
 <p class="m">Sign in to see your collections.</p>
 <button id="gin">Sign in with Google</button>
 <p id="lerr" class="m err" role="alert"></p>
@@ -43,7 +43,7 @@ textarea{width:100%;min-height:70px}
 </div>
 
 <div id="app" hidden>
-<div class="bar top"><h1 id="ttl">🗂 My Collections</h1><span><span class="m" id="who"></span> <button id="thm" aria-label="Switch between light and dark mode"></button> <button id="out">Sign out</button></span></div>
+<div class="bar top"><h1 id="ttl">GFG Collections</h1><span><span class="m" id="who"></span> <button id="thm" aria-label="Switch between light and dark mode"></button> <button id="out">Sign out</button></span></div>
 <div class="cnt err" id="msg" role="status"></div>
 
 <div id="land" hidden><p class="m" style="margin-top:0">Choose a collection.</p><div class="gg" id="landtiles"></div></div>
@@ -104,7 +104,7 @@ async function onSession(s){
   loadCols();history.replaceState({v:"land"},"");showLand(false);
 }
 // Diagnostic line (safe to show: it reveals only the project address and the start of the public key)
-try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v55`}
+try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v57`}
 catch(e){$("diag").textContent=`Check: the Supabase address is not a valid web address (${JSON.stringify(SUPABASE_URL)}) · app v4`}
 if(SUPABASE_URL.startsWith("YOUR_")){showLogin("Set SUPABASE_URL and SUPABASE_ANON_KEY at the top of index.html.");$("gin").hidden=true}
 else if(!window.supabase){showLogin("Could not load the Supabase library. Check your connection.");$("gin").hidden=true}
@@ -713,24 +713,17 @@ const CFG={
       {k:"series",l:"Series",req:1,list:1,ph:"e.g. The Lord of the Rings"},
       {k:"name",l:"Funko name",req:1,ph:"e.g. Gandalf the Grey"},
       {k:"number",l:"Series number",ph:"e.g. 443",half:1},
-      {k:"collection",l:"Collection / line",half:1,list:["Pop! Movies","Pop! Television","Pop! Animation","Pop! Games","Pop! Comics","Pop! Rocks","Pop! Sports","Pop! Rides","Pop! Deluxe","Pop! Town","Pop! Art Series","Pop! Moments","Pop! Icons","Pop! Heroes","Pop! Ad Icons","Pop! Retro Toys","Pop! Albums"]},
       {k:"variant",l:"Variant",half:1,list:["Standard","Chase","Glow in the Dark","Metallic","Flocked","Diamond","Chrome","Translucent","Glitter","Blacklight","Scented","Pearlescent","Signed","Black & white"]},
-      {k:"exclusive",l:"Exclusive to (retailer / event)",half:1,ph:"e.g. Hot Topic, SDCC 2024",list:1},
-      {k:"release_year",l:"Release year",t:"year",half:1},
-      {k:"status",l:"Status",half:1,sel:["","Available","Retired","Vaulted","Upcoming"]},
-      {k:"box_condition",l:"Box condition",half:1,sel:["","Mint","Near mint","Good","Damaged box","Out of box"]},
-      {k:"purchase_price",l:"Purchase price",t:"num",half:1},
-      {k:"current_value",l:"Current value",t:"num",half:1},
       {k:"notes",l:"Notes",t:"area"}],
-    f1:{k:"variant",l:"Variant"},f2:{k:"collection",l:"Collection"},
+    f1:{k:"variant",l:"Variant"},
     dupe:o=>[o.series,o.name,o.number,o.variant].map(x=>String(x||"").trim().toLowerCase()).join("|"),
     group:o=>{const s=String(o.series||"").trim()||"No series";return{key:s.toLowerCase(),label:s,sort:0}},
     title_of:o=>o.name,
     l1:o=>[o.series,o.number?"#"+o.number:""].filter(Boolean).join(" · "),
-    l2:o=>[o.variant&&o.variant!="Standard"?o.variant:"",o.exclusive,o.collection].filter(Boolean).join(" · "),
+    l2:o=>o.variant&&o.variant!="Standard"?o.variant:"",
     sorts:[["num","Series number"],["name","Name"],["new","Recently added"]],
     cmp:{num:(a,b)=>(parseFloat(a.number)||1e9)-(parseFloat(b.number)||1e9)||String(a.name).localeCompare(b.name),name:(a,b)=>String(a.name).localeCompare(b.name),new:(a,b)=>String(b.created_at||"").localeCompare(String(a.created_at||""))},
-    searchIn:["series","name","number","collection","variant","exclusive","notes"],
+    searchIn:["series","name","number","variant","notes"],
     defaults:()=>({owned:true,wishlist:false})},
   pokemon:{k:"pokemon",icon:"⚡",title:"Pokémon Cards",noun:"card",nouns:"cards",table:"pokemon_cards",id:"card_id",color:"#e0b73a",grpLabel:"Generation",
     fields:[
@@ -773,7 +766,7 @@ const CFG={
 const CD={funko:[],pokemon:[]},CDERR={};
 const CS={funko:{q:"",o:"",f1:"",f2:"",so:"num"},pokemon:{q:"",o:"",f1:"",f2:"",so:"num"}};
 let curK=null,curGrp=null;
-const TITLES={land:"🗂 My Collections",books:"📚 My Reading List",funko:"🧸 Funko Pops",pokemon:"⚡ Pokémon Cards"};
+const TITLES={land:"GFG Collections",books:"📚 My Reading List",funko:"🧸 Funko Pops",pokemon:"⚡ Pokémon Cards"};
 const setT=k=>{$("ttl").textContent=TITLES[k]||TITLES.land};
 const hideAll=()=>["land","home","listview","cview"].forEach(i=>$(i).hidden=true);
 
@@ -843,11 +836,11 @@ function renderCol(){
 function renderColHome(k){
   const c=CFG[k],L=CD[k],w=L.filter(x=>x.wishlist&&!x.owned).length;
   const gs=groupsOf(k).filter(g=>k=="pokemon"||g.items.length);
-  const wt=`<button class="gt wish" data-cg="__wishlist" style="border-left-color:var(--blb)"><span class="gn">Wishlist</span><span class="m">${w} ${w==1?c.noun:c.nouns}</span></button>`;
+  const wt=`<button class="gt" data-cg="__wishlist" style="border-left-color:var(--blb)"><span class="gn">Wishlist</span><span class="m">${w} ${w==1?c.noun:c.nouns}</span></button>`;
   const at=`<button class="gt" data-cg="__all" style="border-left-color:var(--card)"><span class="gn">All ${esc(c.title)}</span><span class="m">${L.length} ${L.length==1?c.noun:c.nouns}</span><span class="m">${L.filter(x=>x.owned).length} owned</span></button>`;
   $("cview").innerHTML=`<div class="bar"><button data-cn="land">← Collections</button><button data-cn="add">+ Add ${esc(c.noun)}</button><button data-cn="imp">Import CSV</button><button data-cn="exp">Export CSV</button></div>
-  <div class="gg">${wt}${at}</div><h2 style="margin-top:14px">${k=="pokemon"?"Generations":"Series"}</h2>
-  <div class="gg">${gs.length?gs.map(g=>gTile(k,g)).join(""):`<p class="m">Nothing here yet. Use “+ Add ${esc(c.noun)}” or “Import CSV” to get started.</p>`}</div>`;
+  <div class="gg">${wt}</div><h2 style="margin-top:14px">${k=="pokemon"?"Generations":"Series"}</h2>
+  <div class="gg">${at}${gs.length?gs.map(g=>gTile(k,g)).join(""):`<p class="m">Nothing here yet. Use “+ Add ${esc(c.noun)}” or “Import CSV” to get started.</p>`}</div>`;
 }
 function opts(vals,cur,any){return`<option value="">${any}</option>`+[...new Set(vals.filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),undefined,{numeric:true})).map(v=>`<option value="${esc(v)}"${v==cur?" selected":""}>${esc(v)}</option>`).join("")}
 function renderColList(k){
@@ -856,7 +849,7 @@ function renderColList(k){
   $("cview").innerHTML=`<div class="bar"><button data-cn="home">← ${esc(c.title)}</button><button data-cn="add">+ Add ${esc(c.noun)}</button></div><h2 style="margin-top:6px">${esc(title)}</h2>
   <div class="bar"><input type="search" id="cq" placeholder="Search" aria-label="Search" value="${esc(s.q)}">
   <select id="cf1" aria-label="${c.f1.l}">${opts(items.map(x=>x[c.f1.k]),s.f1,c.f1.l+": any")}</select>
-  <select id="cf2" aria-label="${c.f2.l}">${opts(items.map(x=>x[c.f2.k]),s.f2,c.f2.l+": any")}</select>
+  ${c.f2?`<select id="cf2" aria-label="${c.f2.l}">${opts(items.map(x=>x[c.f2.k]),s.f2,c.f2.l+": any")}</select>`:""}
   <select id="co" aria-label="Owned"><option value="">Owned: any</option><option value="1"${s.o=="1"?" selected":""}>● Owned</option><option value="0"${s.o=="0"?" selected":""}>○ Not owned</option></select>
   <select id="cso" aria-label="Sort">${c.sorts.map(x=>`<option value="${x[0]}"${s.so==x[0]?" selected":""}>Sort: ${x[1]}</option>`).join("")}</select></div>
   <div class="cnt" id="ccnt"></div><div id="clist"></div>`;
@@ -865,7 +858,7 @@ function renderColList(k){
 function fillColList(){
   const k=curK,c=CFG[k],s=CS[k];let items=scopeItems(k,curGrp);
   const q=s.q.trim().toLowerCase();
-  items=items.filter(o=>(!q||c.searchIn.some(f=>String(o[f]??"").toLowerCase().includes(q)))&&(!s.f1||o[c.f1.k]==s.f1)&&(!s.f2||o[c.f2.k]==s.f2)&&(s.o===""||(s.o=="1")==!!o.owned));
+  items=items.filter(o=>(!q||c.searchIn.some(f=>String(o[f]??"").toLowerCase().includes(q)))&&(!s.f1||o[c.f1.k]==s.f1)&&(!c.f2||!s.f2||o[c.f2.k]==s.f2)&&(s.o===""||(s.o=="1")==!!o.owned));
   items=items.slice().sort(c.cmp[s.so]||c.cmp.num);
   $("ccnt").textContent=`${items.length} ${items.length==1?c.noun:c.nouns}`;
   $("clist").innerHTML=items.map(o=>crow(k,o)).join("")||'<p class="m">Nothing matches.</p>';
@@ -1036,7 +1029,8 @@ function cimgDlg(k,o){
   }
 }
 /* ----- CSV ----- */
-const csvKeys=k=>CFG[k].fields.map(f=>f.k).concat(["owned","wishlist","image_url"]);
+const csvFields=k=>CFG[k].fields.filter(f=>!(CFG[k].csvOff||[]).includes(f.k));
+const csvKeys=k=>csvFields(k).map(f=>f.k).concat(["owned","wishlist","image_url"]);
 const hnorm=s=>String(s||"").replace(/^\ufeff/,"").toLowerCase().replace(/\(.*?\)/g,"").replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"");
 function cexp(k){
   const c=CFG[k],q=v=>{v=v==null?"":String(v);return/[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
@@ -1053,7 +1047,7 @@ function cimp(k){
     rd.onload=async()=>{
       const out=$("xm_r");out.textContent="Importing…";
       const rows=parseCSV(String(rd.result));if(rows.length<2){out.textContent="No rows found.";return}
-      const map={};c.fields.forEach(f=>{map[f.k]=f.k;map[hnorm(f.l)]=f.k});["owned","wishlist","image_url"].forEach(x=>map[x]=x);
+      const map={};csvFields(k).forEach(f=>{map[f.k]=f.k;map[hnorm(f.l)]=f.k});["owned","wishlist","image_url"].forEach(x=>map[x]=x);
       const cols=rows[0].map(h=>map[hnorm(h)]||null);
       const seen=new Set(CD[k].map(o=>c.dupe(o)));const add=[],errs=[];let skipped=0;
       rows.slice(1).forEach((r,i)=>{
