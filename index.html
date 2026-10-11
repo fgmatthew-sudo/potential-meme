@@ -61,7 +61,7 @@ textarea{width:100%;min-height:70px}
 
 <div id="listview" hidden>
 <div class="bar"><button id="back">← Home</button><button id="ad2" data-act="ad">+ Add book</button><button id="ftog" aria-expanded="true">Hide filters</button></div>
-<h2 id="ltitle" style="margin-top:6px"></h2>
+<div class="bar" style="align-items:center;margin-top:6px"><h2 id="ltitle" style="margin:0"></h2><button id="bclrw" hidden>Clear wishlist</button></div>
 <div id="sbox" hidden><div class="gg" id="sbtns"></div></div>
 <div id="fbar">
 <div class="bar">
@@ -104,7 +104,7 @@ async function onSession(s){
   loadCols();history.replaceState({v:"land"},"");showLand(false);
 }
 // Diagnostic line (safe to show: it reveals only the project address and the start of the public key)
-try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v57`}
+try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v58`}
 catch(e){$("diag").textContent=`Check: the Supabase address is not a valid web address (${JSON.stringify(SUPABASE_URL)}) · app v4`}
 if(SUPABASE_URL.startsWith("YOUR_")){showLogin("Set SUPABASE_URL and SUPABASE_ANON_KEY at the top of index.html.");$("gin").hidden=true}
 else if(!window.supabase){showLogin("Could not load the Supabase library. Check your connection.");$("gin").hidden=true}
@@ -273,6 +273,7 @@ function renderSeriesBtns(){
   box.innerHTML=ids.map(i=>t(i,S(i).name,by[i],first(i),col(gen[i],G(gen[i]).name))).join("")+(alone.n?t("__s","Standalone",alone,null,special?tileColor(special=="mjg"?"Safe for MJG":"Wishlist"):col(g,G(g).name)):"");
 }
 function renderList(){
+  $("bclrw").hidden=special!="wishlist";
   renderSeriesBtns();if(seriesMode()){$("ltitle").textContent=special?SPNAME[special]:G($("fg").value).name;return}
   {const sv=$("fs").value,sn=sv?" › "+(sv=="__s"?"Standalone":(S(sv)||{}).name||""):"";
    $("ltitle").textContent=special?SPNAME[special]+sn:$("fg").value?G($("fg").value).name+sn:"All books"}
@@ -846,7 +847,7 @@ function opts(vals,cur,any){return`<option value="">${any}</option>`+[...new Set
 function renderColList(k){
   const c=CFG[k],s=CS[k],items=scopeItems(k,curGrp);
   const title=scopeName(k,curGrp);
-  $("cview").innerHTML=`<div class="bar"><button data-cn="home">← ${esc(c.title)}</button><button data-cn="add">+ Add ${esc(c.noun)}</button></div><h2 style="margin-top:6px">${esc(title)}</h2>
+  $("cview").innerHTML=`<div class="bar"><button data-cn="home">← ${esc(c.title)}</button><button data-cn="add">+ Add ${esc(c.noun)}</button></div><div class="bar" style="align-items:center;margin-top:6px"><h2 style="margin:0">${esc(title)}</h2>${curGrp=="__wishlist"?'<button data-cn="clrw">Clear wishlist</button>':""}</div>
   <div class="bar"><input type="search" id="cq" placeholder="Search" aria-label="Search" value="${esc(s.q)}">
   <select id="cf1" aria-label="${c.f1.l}">${opts(items.map(x=>x[c.f1.k]),s.f1,c.f1.l+": any")}</select>
   ${c.f2?`<select id="cf2" aria-label="${c.f2.l}">${opts(items.map(x=>x[c.f2.k]),s.f2,c.f2.l+": any")}</select>`:""}
@@ -1076,6 +1077,13 @@ document.addEventListener("error",e=>{const t=e.target;if(t&&t.tagName==="IMG"&&
 document.addEventListener("click",async e=>{
   const t=e.target.closest("button");if(!t)return;
   if(t.id=="toland"){showLand(true);return}
+  if(t.id=="bclrw"){
+    const L=books.filter(b=>b.wishlist);
+    if(!L.length){msg("The Books wishlist is already empty.");return}
+    if(!confirm(`Remove all ${L.length} book${L.length==1?"":"s"} from your Books wishlist? Nothing is deleted.`))return;
+    const{error}=await sb.from("books").update({wishlist:false}).eq("wishlist",true);
+    if(error){msg("Could not clear: "+error.message);return}
+    msg("");L.forEach(b=>b.wishlist=false);render();return}
   if(t.dataset.land){const k=t.dataset.land;if(k=="books")go(null,true);else colGo(k,null,true);return}
   if(t.dataset.cg!==undefined){colGo(curK,t.dataset.cg,true);return}
   if(t.dataset.cn){
@@ -1089,6 +1097,14 @@ document.addEventListener("click",async e=>{
       if(curGrp=="__wishlist"){pre.owned=false;pre.wishlist=true}
       cform(curK,null,pre)}
     else if(n=="imp")cimp(curK);else if(n=="exp")cexp(curK);
+    else if(n=="clrw"){
+      const c=CFG[curK],L=CD[curK].filter(o=>o.wishlist);
+      if(!L.length){msg("The "+c.title+" wishlist is already empty.");return}
+      if(!confirm(`Remove all ${L.length} item${L.length==1?"":"s"} from your ${c.title} wishlist? Nothing is deleted.`))return;
+      const{error}=await sb.from(c.table).update({wishlist:false}).eq("wishlist",true);
+      if(error){msg("Could not clear: "+error.message);return}
+      msg("");L.forEach(o=>o.wishlist=false);refreshCol();
+    }
     return;
   }
   if(t.dataset.cd){cdetail(t.dataset.ck,t.dataset.cd);return}
