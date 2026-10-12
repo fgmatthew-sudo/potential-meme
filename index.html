@@ -104,7 +104,7 @@ async function onSession(s){
   loadCols();history.replaceState({v:"land"},"");showLand(false);
 }
 // Diagnostic line (safe to show: it reveals only the project address and the start of the public key)
-try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v63`}
+try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v64`}
 catch(e){$("diag").textContent=`Check: the Supabase address is not a valid web address (${JSON.stringify(SUPABASE_URL)}) · app v4`}
 if(SUPABASE_URL.startsWith("YOUR_")){showLogin("Set SUPABASE_URL and SUPABASE_ANON_KEY at the top of index.html.");$("gin").hidden=true}
 else if(!window.supabase){showLogin("Could not load the Supabase library. Check your connection.");$("gin").hidden=true}
@@ -773,6 +773,7 @@ Object.assign(CFG.pokemon,{flags:1,doneOf:o=>o.owned,doneLab:"owned",lists:[WL],
 const STL={watched:"✓ Watched",in_progress:"◐ In progress",tbw:"★ TBW"};
 CFG.movies={k:"movies",icon:"🎬",title:"Movies / Series",noun:"title",nouns:"titles",table:"movies_series",id:"title_id",color:"#7d8fd6",grpLabel:"Genre",groupHead:"Genres",sql:"add-movies.sql",
   doneOf:o=>o.status=="watched",doneLab:"watched",
+  csvOff:["release_year","director","platform","rating"],
   lists:[
     {key:"__tbw",label:"To be watched",test:o=>o.status=="tbw",color:"var(--blb)",pre:{status:"tbw"},clear:{label:"Clear TBW",count:o=>o.status=="tbw",patch:{status:null},col:"status",val:"tbw",what:"TBW list"}},
     {key:"__ip",label:"In progress",test:o=>o.status=="in_progress",color:"var(--ywb)",pre:{status:"in_progress"},clear:{label:"Clear in progress",count:o=>o.status=="in_progress",patch:{status:null},col:"status",val:"in_progress",what:"in-progress list"}}],
@@ -788,7 +789,7 @@ CFG.movies={k:"movies",icon:"🎬",title:"Movies / Series",noun:"title",nouns:"t
     {k:"status",l:"Status",half:1,sel:[["","—"],["watched","Watched"],["in_progress","In progress"],["tbw","TBW"]]},
     {k:"notes",l:"Notes",t:"area"}],
   f1:{k:"media_type",l:"Type"},f2:{k:"platform",l:"Platform"},
-  dupe:o=>[o.name,o.media_type,o.release_year].map(x=>String(x||"").trim().toLowerCase()).join("|"),
+  dupe:o=>[o.name,o.media_type].map(x=>String(x||"").trim().toLowerCase()).join("|"),
   group:o=>{const g=String(o.genre||"").trim()||"No genre";return{key:g.toLowerCase(),label:g,sort:0}},
   title_of:o=>o.name,
   l1:o=>[o.media_type,o.genre,o.release_year].filter(Boolean).join(" · "),
