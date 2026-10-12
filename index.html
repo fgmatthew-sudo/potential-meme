@@ -61,7 +61,7 @@ textarea{width:100%;min-height:70px}
 
 <div id="listview" hidden>
 <div class="bar"><button id="back">← Home</button><button id="ad2" data-act="ad">+ Add book</button><button id="ftog" aria-expanded="true">Hide filters</button></div>
-<div class="bar" style="align-items:center;margin-top:6px"><h2 id="ltitle" style="margin:0"></h2><button id="bclrw" hidden>Clear wishlist</button></div>
+<div class="bar" style="align-items:center;margin-top:6px"><h2 id="ltitle" style="margin:0"></h2><button id="wview" hidden></button><button id="bclrw" hidden>Clear wishlist</button></div>
 <div id="sbox" hidden><div class="gg" id="sbtns"></div></div>
 <div id="fbar">
 <div class="bar">
@@ -104,7 +104,7 @@ async function onSession(s){
   loadCols();history.replaceState({v:"land"},"");showLand(false);
 }
 // Diagnostic line (safe to show: it reveals only the project address and the start of the public key)
-try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v64`}
+try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v65`}
 catch(e){$("diag").textContent=`Check: the Supabase address is not a valid web address (${JSON.stringify(SUPABASE_URL)}) · app v4`}
 if(SUPABASE_URL.startsWith("YOUR_")){showLogin("Set SUPABASE_URL and SUPABASE_ANON_KEY at the top of index.html.");$("gin").hidden=true}
 else if(!window.supabase){showLogin("Could not load the Supabase library. Check your connection.");$("gin").hidden=true}
@@ -235,35 +235,42 @@ function renderHome(){
     :'<p class="m">No books yet. Use “+ Add book” or “Import CSV” to get started.</p>';
 }
 function render(){renderHome();renderList();renderBingo()}
-let special=null,filtersHidden=false;try{filtersHidden=localStorage.getItem("filtersHidden")==="1"}catch(e){}
-function go(g,push,fresh,ser){
+let special=null,filtersHidden=false,wishView="list";try{wishView=localStorage.getItem("wishView")==="genres"?"genres":"list"}catch(e){}
+try{filtersHidden=localStorage.getItem("filtersHidden")==="1"}catch(e){}
+function go(g,push,fresh,ser,wg){
   const home=g===null;
   if(home)special=null;
   if(!home){
     if(fresh)["q","fa","fs","fo","fr"].forEach(i=>$(i).value="");
     special=g=="__wishlist"||g=="__tbr"||g=="__mjg"?g.slice(2):null;
-    $("fg").value=special?"":g;if(!special&&$("fg").value!==g)$("fg").value="";
+    $("fg").value=special?(wg||""):g;if(!special&&$("fg").value!==g)$("fg").value="";
   }
   if(!home)$("fs").value=ser||"";
   $("land").hidden=true;$("cview").hidden=true;setT("books");$("home").hidden=!home;$("listview").hidden=home;
-  if(push)history.pushState({v:home?"home":"list",g,s:ser||""},"");
+  if(push)history.pushState({v:home?"home":"list",g,s:ser||"",wg:wg||""},"");
   render();window.scrollTo(0,0);
 }
-window.addEventListener("popstate",e=>{const s=e.state;if(s&&s.v==="land"){showLand(false);return}if(s&&s.v==="c"){colGo(s.k,s.grp,false);return}go(s&&s.v==="list"?s.g:null,false,false,s&&s.s)});
+window.addEventListener("popstate",e=>{const s=e.state;if(s&&s.v==="land"){showLand(false);return}if(s&&s.v==="c"){colGo(s.k,s.grp,false);return}go(s&&s.v==="list"?s.g:null,false,false,s&&s.s,s&&s.wg)});
 // a genre that has series shows one tile per series (plus Standalone); a tile opens its own page of books
 const inList=b=>special=="wishlist"?b.wishlist&&!b.owned:special=="mjg"?b.safe_mjg&&!b.owned:special=="tbr"?!!b.tbr:true;
 const scope=()=>special?books.filter(inList):books.filter(b=>b.genre_id==$("fg").value);
 const SPNAME={wishlist:"Wishlist",mjg:"Safe for MJG",tbr:"To be read (TBR)"};
 function seriesMode(){
   const g=$("fg").value;if($("fs").value!=="")return false;
+  if(special=="wishlist")return wishView=="genres"&&g==="";
   if(special)return special=="mjg"&&scope().some(b=>b.series_id);
   return!!g&&books.some(b=>b.genre_id==g&&b.series_id)}
 function renderSeriesBtns(){
   const g=$("fg").value,box=$("sbtns"),wrap=$("sbox"),on=seriesMode(),sd=$("fs").value!=="",sc=scope();
   $("fbar").hidden=on||filtersHidden;$("ftog").hidden=on;$("ftog").textContent=filtersHidden?"Show filters":"Hide filters";$("ftog").setAttribute("aria-expanded",String(!filtersHidden));wrap.hidden=!on;$("cnt").hidden=on;$("list").hidden=on;
   const hasS=sc.some(b=>b.series_id);
-  $("back").textContent=sd&&hasS&&(special=="wishlist"||special=="mjg")?"← "+SPNAME[special]:(sd&&g&&!special&&hasS)?"← "+G(g).name:"← Home";
+  $("back").textContent=sd&&hasS&&(special=="wishlist"||special=="mjg")?"← "+SPNAME[special]:(special=="wishlist"&&wishView=="genres"&&g)?"← Wishlist":(sd&&g&&!special&&hasS)?"← "+G(g).name:"← Home";
   if(!on){box.innerHTML="";return}
+  if(special=="wishlist"){
+    const gc={};sc.forEach(b=>gc[b.genre_id]=(gc[b.genre_id]||0)+1);
+    box.innerHTML=Object.keys(gc).sort((x,y)=>G(x).name.localeCompare(G(y).name)).map(gid=>`<button class="gt${tileColor(G(gid).name)||`" style="border-left-color:hsl(${hue(gid)} 45% 45%)`}" data-wg="${esc(gid)}" style="min-height:0"><span class="gn">${esc(G(gid).name)}</span><span class="m">${gc[gid]} book${gc[gid]==1?"":"s"}</span></button>`).join("")||'<p class="m">Your wishlist is empty.</p>';
+    return;
+  }
   const by={},gen={};let alone={n:0,o:0,r:0,w:0,d:0};
   sc.forEach(b=>{const x=b.series_id?(by[b.series_id]??={n:0,o:0,r:0,w:0,d:0}):alone;if(b.series_id)gen[b.series_id]??=b.genre_id;x.n++;if(b.owned)x.o++;if(b.read)x.r++;if(b.wishlist&&!b.owned)x.w++;if(b.owned&&b.read)x.d++});
   const ids=Object.keys(by).sort((x,y)=>S(x).name.localeCompare(S(y).name));
@@ -273,10 +280,10 @@ function renderSeriesBtns(){
   box.innerHTML=ids.map(i=>t(i,S(i).name,by[i],first(i),col(gen[i],G(gen[i]).name))).join("")+(alone.n?t("__s","Standalone",alone,null,special?tileColor(special=="mjg"?"Safe for MJG":"Wishlist"):col(g,G(g).name)):"");
 }
 function renderList(){
-  $("bclrw").hidden=special!="wishlist";
+  $("bclrw").hidden=special!="wishlist";$("wview").hidden=special!="wishlist";$("wview").textContent=wishView=="genres"?"Switch to list view":"Switch to genre buttons";
   renderSeriesBtns();if(seriesMode()){$("ltitle").textContent=special?SPNAME[special]:G($("fg").value).name;return}
   {const sv=$("fs").value,sn=sv?" › "+(sv=="__s"?"Standalone":(S(sv)||{}).name||""):"";
-   $("ltitle").textContent=special?SPNAME[special]+sn:$("fg").value?G($("fg").value).name+sn:"All books"}
+   $("ltitle").textContent=special?SPNAME[special]+(special=="wishlist"&&wishView=="genres"&&$("fg").value?" › "+G($("fg").value).name:"")+sn:$("fg").value?G($("fg").value).name+sn:"All books"}
   const q=$("q").value.toLowerCase(),g=$("fg").value,a=$("fa").value,s=$("fs").value,o=$("fo").value,r=$("fr").value,k=$("so").value;
   const l=books.filter(b=>{
     if(special&&(!b[special=="mjg"?"safe_mjg":special]||(special!="tbr"&&b.owned)))return false;
@@ -288,7 +295,7 @@ function renderList(){
   $("cnt").textContent=`${l.length} of ${books.length} books · ${l.filter(b=>b.owned).length} owned · ${l.filter(b=>b.read).length} read`;
   if(!books.length){$("list").innerHTML='<p class="m">No books yet. Use “+ Add book” or “Import CSV”.</p>';return}
   if(!l.length){$("list").innerHTML='<p class="m">No books match.</p>';return}
-  if(special=="wishlist"){
+  if(special=="wishlist"&&!$("fg").value){
     const gr={};l.forEach(b=>(gr[G(b.genre_id).name]??=[]).push(b));
     $("list").innerHTML=Object.keys(gr).sort((x,y)=>x.localeCompare(y)).map(n=>`<h2>${esc(n)}</h2>`+gr[n].map(row).join("")).join("");
   }else if($("gv").getAttribute("aria-pressed")=="true"){
@@ -685,6 +692,8 @@ document.addEventListener("click",async e=>{
   if(t.id=="bnew"){if(confirm("Replace this year's bingo board with a new one? Your progress on this board will be lost.")){bingo.cells=newBoard();saveBingo();renderBingo()}return}
   if(t.id=="thm"){const n=isDark()?"light":"dark";document.documentElement.setAttribute("data-theme",n);try{localStorage.setItem("theme",n)}catch(e){}themeBtn();return}
   if(t.id=="ftog"){filtersHidden=!filtersHidden;try{localStorage.setItem("filtersHidden",filtersHidden?"1":"0")}catch(e){}render();return}
+  if(t.id=="wview"){wishView=wishView=="genres"?"list":"genres";try{localStorage.setItem("wishView",wishView)}catch(e){}$("fg").value="";$("fs").value="";render();window.scrollTo(0,0);return}
+  if(t.dataset.wg!==undefined){go("__wishlist",true,false,"",t.dataset.wg);return}
   if(t.dataset.ser!==undefined){go(special?"__"+special:$("fg").value,true,false,t.dataset.ser);return}
   if(t.dataset.genre!==undefined){go(t.dataset.genre,true,true);return}
   if(t.id=="back"){if(history.state&&history.state.v==="list")history.back();else go(null,false);return}
@@ -771,9 +780,9 @@ const WL={key:"__wishlist",label:"Wishlist",test:o=>o.wishlist&&!o.owned,color:"
 Object.assign(CFG.funko,{flags:1,doneOf:o=>o.owned,doneLab:"owned",lists:[WL],groupHead:"Series",sql:"add-collections.sql",imgLabel:"Search the web for this Pop",imgQ:o=>"Funko Pop "+[o.series,o.name,o.number?"#"+o.number:""].filter(Boolean).join(" ")});
 Object.assign(CFG.pokemon,{flags:1,doneOf:o=>o.owned,doneLab:"owned",lists:[WL],groupHead:"Generations",sql:"add-collections.sql",imgLabel:"Search the web for this card",imgQ:o=>"Pokemon card "+[o.name,o.set_name,o.card_number].filter(Boolean).join(" ")});
 const STL={watched:"✓ Watched",in_progress:"◐ In progress",tbw:"★ TBW"};
-CFG.movies={k:"movies",icon:"🎬",title:"Movies / Series",noun:"title",nouns:"titles",table:"movies_series",id:"title_id",color:"#7d8fd6",grpLabel:"Genre",groupHead:"Genres",sql:"add-movies.sql",
+CFG.movies={k:"movies",icon:"🎬",title:"Movies / Series",noun:"title",nouns:"titles",table:"movies_series",id:"title_id",color:"#7d8fd6",grpLabel:"Genre",groupHead:"Browse",sql:"add-movies.sql",
   doneOf:o=>o.status=="watched",doneLab:"watched",
-  csvOff:["release_year","director","platform","rating"],
+  types:[["Movie","Movies"],["Series","Series"]],
   lists:[
     {key:"__tbw",label:"To be watched",test:o=>o.status=="tbw",color:"var(--blb)",pre:{status:"tbw"},clear:{label:"Clear TBW",count:o=>o.status=="tbw",patch:{status:null},col:"status",val:"tbw",what:"TBW list"}},
     {key:"__ip",label:"In progress",test:o=>o.status=="in_progress",color:"var(--ywb)",pre:{status:"in_progress"},clear:{label:"Clear in progress",count:o=>o.status=="in_progress",patch:{status:null},col:"status",val:"in_progress",what:"in-progress list"}}],
@@ -781,24 +790,21 @@ CFG.movies={k:"movies",icon:"🎬",title:"Movies / Series",noun:"title",nouns:"t
     {k:"name",l:"Title",req:1,ph:"e.g. The Fellowship of the Ring"},
     {k:"media_type",l:"Type",half:1,sel:["Movie","Series"]},
     {k:"genre",l:"Genre",half:1,list:["Action","Adventure","Animation","Comedy","Crime","Documentary","Drama","Fantasy","Horror","Mystery","Romance","Sci-Fi","Thriller","Western"]},
-    {k:"release_year",l:"Release year",t:"year",half:1},
-    {k:"director",l:"Director / creator",half:1,list:1},
-    {k:"platform",l:"Where to watch",half:1,list:["Netflix","Prime Video","Disney+","Max","Apple TV+","Hulu","Cinema","Blu-ray / DVD"]},
     {k:"seasons",l:"Seasons (series)",t:"qty",half:1},
-    {k:"rating",l:"My rating (0–10)",t:"rate",half:1},
     {k:"status",l:"Status",half:1,sel:[["","—"],["watched","Watched"],["in_progress","In progress"],["tbw","TBW"]]},
     {k:"notes",l:"Notes",t:"area"}],
-  f1:{k:"media_type",l:"Type"},f2:{k:"platform",l:"Platform"},
+  f1:{k:"genre",l:"Genre"},
   dupe:o=>[o.name,o.media_type].map(x=>String(x||"").trim().toLowerCase()).join("|"),
-  group:o=>{const g=String(o.genre||"").trim()||"No genre";return{key:g.toLowerCase(),label:g,sort:0}},
+  group:o=>{const g=String(o.genre||"").trim()||"No genre";return{key:mtype(o)+"|"+g.toLowerCase(),label:g,sort:0}},
   title_of:o=>o.name,
-  l1:o=>[o.media_type,o.genre,o.release_year].filter(Boolean).join(" · "),
-  l2:o=>[o.director,o.platform,o.seasons?o.seasons+(o.seasons==1?" season":" seasons"):"",o.rating!=null?"★ "+o.rating:""].filter(Boolean).join(" · "),
-  sorts:[["name","Title"],["year","Release year (newest)"],["rate","My rating"],["new","Recently added"]],
-  cmp:{name:(a,b)=>String(a.name).localeCompare(b.name),year:(a,b)=>(b.release_year||0)-(a.release_year||0)||String(a.name).localeCompare(b.name),rate:(a,b)=>(b.rating??-1)-(a.rating??-1)||String(a.name).localeCompare(b.name),new:(a,b)=>String(b.created_at||"").localeCompare(String(a.created_at||""))},
-  searchIn:["name","media_type","genre","director","platform","notes"],
+  l1:o=>[o.media_type,o.genre].filter(Boolean).join(" · "),
+  l2:o=>o.seasons?o.seasons+(o.seasons==1?" season":" seasons"):"",
+  sorts:[["name","Title"],["new","Recently added"]],
+  cmp:{name:(a,b)=>String(a.name).localeCompare(b.name),new:(a,b)=>String(b.created_at||"").localeCompare(String(a.created_at||""))},
+  searchIn:["name","media_type","genre","notes"],
   defaults:()=>({status:null}),
-  imgLabel:"Search the web for a poster",imgQ:o=>[o.name,o.release_year||"",o.media_type=="Series"?"TV series":"movie","poster"].filter(Boolean).join(" ")};
+  imgLabel:"Search the web for a poster",imgQ:o=>[o.name,o.media_type=="Series"?"TV series":"movie","poster"].filter(Boolean).join(" ")};
+const mtype=o=>o.media_type=="Series"?"Series":"Movie";
 const CD={funko:[],pokemon:[],movies:[]},CDERR={};
 const CS={funko:{q:"",o:"",f1:"",f2:"",so:"num"},pokemon:{q:"",o:"",f1:"",f2:"",so:"num"},movies:{q:"",o:"",f1:"",f2:"",so:"name"}};
 let curK=null,curGrp=null;
@@ -845,8 +851,16 @@ function groupsOf(k){
   return[...m.values()].sort((x,y)=>(x.sort-y.sort)||x.label.localeCompare(y.label));
 }
 const listOf=(k,grp)=>CFG[k].lists.find(l=>l.key==grp);
-const scopeItems=(k,grp)=>{if(grp==null||grp=="__all")return CD[k];const l=listOf(k,grp);return l?CD[k].filter(l.test):(groupsOf(k).find(g=>g.key==grp)||{items:[]}).items};
-const scopeName=(k,grp)=>grp=="__all"?"All "+CFG[k].title:listOf(k,grp)?listOf(k,grp).label:((groupsOf(k).find(g=>g.key==grp)||{}).label||"");
+const scopeItems=(k,grp)=>{if(grp==null||grp=="__all")return CD[k];if(k=="movies"&&/^__ta?:/.test(grp))return CD[k].filter(o=>mtype(o)==grp.replace(/^__ta?:/,""));const l=listOf(k,grp);return l?CD[k].filter(l.test):(groupsOf(k).find(g=>g.key==grp)||{items:[]}).items};
+const typeLabel=(k,tk)=>(CFG[k].types.find(x=>x[0]==tk)||[])[1]||"";
+const scopeName=(k,grp)=>{
+  if(grp=="__all")return"All "+CFG[k].title;
+  if(listOf(k,grp))return listOf(k,grp).label;
+  if(k=="movies"&&grp.startsWith("__ta:"))return"All "+typeLabel(k,grp.slice(5));
+  if(k=="movies"&&grp.startsWith("__t:"))return typeLabel(k,grp.slice(4));
+  const lb=(groupsOf(k).find(g=>g.key==grp)||{}).label||"";
+  return k=="movies"?typeLabel(k,grp.split("|")[0])+" › "+lb:lb;
+};
 function stat(k,g){
   const L=g.items,c=CFG[k],n=L.length,o=L.filter(c.doneOf).length,w=L.filter(c.flags?(x=>x.wishlist&&!x.owned):(x=>x.status=="tbw")).length,p=L.filter(x=>x.status=="in_progress").length;
   let u=null,t=null;
@@ -870,6 +884,7 @@ function renderCol(){
   const k=curK;if(!k)return;const c=CFG[k],box=$("cview");
   if(CDERR[k]){box.innerHTML=`<div class="bar"><button data-cn="land">← Collections</button></div><h2>${c.icon} ${c.title}</h2><p class="err">This collection isn't set up in your database yet (${esc(CDERR[k])}).</p><p class="m">Open Supabase → SQL Editor, paste the contents of <strong>${esc(c.sql)}</strong>, run it, then reload this page.</p>`;return}
   if(curGrp==null)return renderColHome(k);
+  if(k=="movies"&&curGrp.startsWith("__t:"))return renderMovieType(k,curGrp.slice(4));
   renderColList(k);
 }
 function renderColHome(k){
@@ -879,13 +894,19 @@ function renderColHome(k){
   const at=`<button class="gt" data-cg="__all" style="border-left-color:var(--card)"><span class="gn">All ${esc(c.title)}</span><span class="m">${L.length} ${L.length==1?c.noun:c.nouns}</span><span class="m">${L.filter(c.doneOf).length} ${c.doneLab}</span></button>`;
   $("cview").innerHTML=`<div class="bar"><button data-cn="land">← Collections</button><button data-cn="add">+ Add ${esc(c.noun)}</button><button data-cn="imp">Import CSV</button><button data-cn="exp">Export CSV</button></div>
   <div class="gg">${wt}</div><h2 style="margin-top:14px">${c.groupHead}</h2>
-  <div class="gg">${at}${gs.length?gs.map(g=>gTile(k,g)).join(""):`<p class="m">Nothing here yet. Use “+ Add ${esc(c.noun)}” or “Import CSV” to get started.</p>`}</div>`;
+  <div class="gg">${at}${c.types?c.types.map(([tk,tl])=>gTile(k,{key:"__t:"+tk,label:tl,items:L.filter(o=>mtype(o)==tk)})).join(""):gs.length?gs.map(g=>gTile(k,g)).join(""):`<p class="m">Nothing here yet. Use “+ Add ${esc(c.noun)}” or “Import CSV” to get started.</p>`}</div>`;
 }
 function opts(vals,cur,any){return`<option value="">${any}</option>`+[...new Set(vals.filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),undefined,{numeric:true})).map(v=>`<option value="${esc(v)}"${v==cur?" selected":""}>${esc(v)}</option>`).join("")}
+function renderMovieType(k,tk){
+  const c=CFG[k],L=CD[k].filter(o=>mtype(o)==tk),tl=typeLabel(k,tk);
+  const gs=groupsOf(k).filter(g=>g.key.startsWith(tk+"|"));
+  const at=`<button class="gt" data-cg="__ta:${tk}" style="border-left-color:var(--card)"><span class="gn">All ${esc(tl)}</span><span class="m">${L.length} ${L.length==1?c.noun:c.nouns}</span><span class="m">${L.filter(c.doneOf).length} watched</span></button>`;
+  $("cview").innerHTML=`<div class="bar"><button data-cn="home">← ${esc(c.title)}</button><button data-cn="add">+ Add ${esc(c.noun)}</button></div><h2 style="margin-top:6px">${esc(tl)}</h2><div class="gg">${at}${gs.map(g=>gTile(k,g)).join("")}</div>`;
+}
 function renderColList(k){
   const c=CFG[k],s=CS[k],items=scopeItems(k,curGrp);
   const title=scopeName(k,curGrp);
-  $("cview").innerHTML=`<div class="bar"><button data-cn="home">← ${esc(c.title)}</button><button data-cn="add">+ Add ${esc(c.noun)}</button></div><div class="bar" style="align-items:center;margin-top:6px"><h2 style="margin:0">${esc(title)}</h2>${listOf(k,curGrp)&&listOf(k,curGrp).clear?`<button data-cn="clrw">${listOf(k,curGrp).clear.label}</button>`:""}</div>
+  $("cview").innerHTML=`<div class="bar"><button data-cn="home">← ${esc(k=="movies"&&!listOf(k,curGrp)&&curGrp!="__all"?typeLabel(k,curGrp.replace(/^__ta?:/,"").split("|")[0]):c.title)}</button><button data-cn="add">+ Add ${esc(c.noun)}</button></div><div class="bar" style="align-items:center;margin-top:6px"><h2 style="margin:0">${esc(title)}</h2>${listOf(k,curGrp)&&listOf(k,curGrp).clear?`<button data-cn="clrw">${listOf(k,curGrp).clear.label}</button>`:""}</div>
   <div class="bar"><input type="search" id="cq" placeholder="Search" aria-label="Search" value="${esc(s.q)}">
   <select id="cf1" aria-label="${c.f1.l}">${opts(items.map(x=>x[c.f1.k]),s.f1,c.f1.l+": any")}</select>
   ${c.f2?`<select id="cf2" aria-label="${c.f2.l}">${opts(items.map(x=>x[c.f2.k]),s.f2,c.f2.l+": any")}</select>`:""}
@@ -944,7 +965,7 @@ async function cupd(k,o,patch){
   if(error){Object.assign(o,old);msg("Save failed: "+error.message);return false}
   msg("");return true;
 }
-function refreshCol(){if(!$("cview").hidden){if(curGrp==null)renderColHome(curK);else fillColList()}renderLand()}
+function refreshCol(){if(!$("cview").hidden){if(curGrp==null||(curK=="movies"&&curGrp.startsWith("__t:")))renderCol();else fillColList()}renderLand()}
 /* ----- detail ----- */
 function cdetail(k,id){
   const c=CFG[k],o=CD[k].find(x=>x[c.id]==id);if(!o)return;const d=$("xd");detId=id;
@@ -1174,7 +1195,7 @@ document.addEventListener("click",async e=>{
       const ls=listOf(curK,curGrp);
       if(curGrp&&curGrp!="__all"&&!ls){
         if(curK=="funko")pre.series=scopeName(curK,curGrp);
-        else if(curK=="movies"){if(curGrp!="no genre")pre.genre=scopeName(curK,curGrp)}
+        else if(curK=="movies"){if(/^__ta?:/.test(curGrp))pre.media_type=curGrp.replace(/^__ta?:/,"");else{pre.media_type=curGrp.split("|")[0];const gl=(groupsOf(curK).find(g=>g.key==curGrp)||{}).label;if(gl&&gl!="No genre")pre.genre=gl}}
         else if(curGrp!="other"){const[g,r]=curGrp.split("|");pre.generation=+g;pre.region=r}else pre.card_type="Trainer"}
       if(ls)Object.assign(pre,ls.pre);
       cform(curK,null,pre)}
