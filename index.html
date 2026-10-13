@@ -104,7 +104,7 @@ async function onSession(s){
   loadCols();history.replaceState({v:"land"},"");showLand(false);
 }
 // Diagnostic line (safe to show: it reveals only the project address and the start of the public key)
-try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v67`}
+try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v68`}
 catch(e){$("diag").textContent=`Check: the Supabase address is not a valid web address (${JSON.stringify(SUPABASE_URL)}) · app v4`}
 if(SUPABASE_URL.startsWith("YOUR_")){showLogin("Set SUPABASE_URL and SUPABASE_ANON_KEY at the top of index.html.");$("gin").hidden=true}
 else if(!window.supabase){showLogin("Could not load the Supabase library. Check your connection.");$("gin").hidden=true}
@@ -214,7 +214,7 @@ function coverBox(b,big){
   const inner=c?`<img class="cim" src="${esc(big?c.image_url:(c.thumbnail_url||c.image_url))}" alt="${esc(c.alt_text||"Cover of "+b.title)}" loading="lazy" referrerpolicy="no-referrer">`:"[Book Cover Unavailable]";
   return`<div class="${cls}" style="background:hsl(${hue(b.book_id)} 35% 38%)"${c?"":` role="img" aria-label="Cover of ${esc(b.title)} unavailable"`}>${inner}</div>`}
 function row(b){const s=b.series_id?esc(S(b.series_id).name):"Standalone";
-  return`<div class="row${b.tbr?" st-tbr":b.read?" st-done":b.owned?" st-own":b.wishlist?" st-wish":b.safe_mjg?" st-mjg":""}">${coverBox(b)}<div class="main"><button class="t" data-open="${esc(b.book_id)}">${esc(b.title)}</button><div class="m">${esc(A(b.author_id).name)} · ${esc(G(b.genre_id).name)}</div><div class="m">Series: ${s}${b.reading_order!=null?` · Read #${b.reading_order}`:""}</div><div class="tg">${tog(b,"owned")}${tog(b,"read")}${tog(b,"wishlist")}${tog(b,"tbr")}${tog(b,"safe_mjg")}</div></div></div>`}
+  return`<div class="row${b.tbr?" st-tbr":b.read?" st-done":b.owned?" st-own":b.wishlist&&special!="wishlist"?" st-wish":b.safe_mjg?" st-mjg":""}">${coverBox(b)}<div class="main"><button class="t" data-open="${esc(b.book_id)}">${esc(b.title)}</button><div class="m">${esc(A(b.author_id).name)} · ${esc(G(b.genre_id).name)}</div><div class="m">Series: ${s}${b.reading_order!=null?` · Read #${b.reading_order}`:""}</div><div class="tg">${tog(b,"owned")}${tog(b,"read")}${tog(b,"wishlist")}${tog(b,"tbr")}${tog(b,"safe_mjg")}</div></div></div>`}
 const TILE={wishlist:["#A7C7E7","#A7C7E7","#1d2b3f"],tbr:["#f8d4d4","#e08a8a","#3a1a1a"],
   "action/adventure":["#e6b98c","#c48a52","#3a2410"],"childhood books":["#dff0fb","#a5cfe8","#1d3140"],classics:["#d6d6d6","#a0a0a0","#222"],
   "comics/manga":["#d5efd6","#97c99b","#1c3320"],fantasy:["#cdbcee","#8a68c9","#2d2142"],horror:["#111","#111","#f2f2f2"],
@@ -810,6 +810,8 @@ const CS={funko:{q:"",o:"",f1:"",f2:"",so:"num"},pokemon:{q:"",o:"",f1:"",f2:"",
 let curK=null,curGrp=null;
 const CWV={};
 const cwv=k=>{if(CWV[k])return CWV[k];let v="list";try{v=localStorage.getItem("cwv_"+k)==="groups"?"groups":"list"}catch(e){}return CWV[k]=v};
+const inWL=()=>curGrp=="__wishlist"||(curGrp||"").startsWith("__wl:");
+let CFH=false;try{CFH=localStorage.getItem("cfiltersHidden")==="1"}catch(e){}
 const isWishTiles=()=>curK&&CFG[curK].flags&&curGrp=="__wishlist"&&cwv(curK)=="groups";
 const TITLES={land:"GFG Collections",books:"📚 My Reading List",funko:"🧸 Funko Pops",pokemon:"⚡ Pokémon Cards",movies:"🎬 Movies / Series"};
 const setT=k=>{$("ttl").textContent=TITLES[k]||TITLES.land;$("homebtn").hidden=!TITLES[k]||k==="land"};
@@ -874,7 +876,7 @@ function stat(k,g){
 function gTile(k,g){
   const s=stat(k,g),c=CFG[k];
   const done=s.t!=null?s.u==s.t:(s.n>0&&s.o==s.n);
-  const cls=k=="movies"?((s.n>0&&s.o==s.n)?" done":(s.p?" own":"")+(s.w?" wish":"")):done||(k=="funko"&&s.o)?" done":(s.o?" own":"")+(s.w?" wish":"");
+  const cls=k=="movies"?((s.n>0&&s.o==s.n)?" done":(s.p?" own":"")+(s.w?" wish":"")):done?" done":(s.o?" own":"")+(s.w?" wish":"");
   const bar=s.t!=null?[s.u,s.t]:[s.o,s.n];
   const lines=k=="movies"
     ?`<span class="m">${s.n} ${s.n==1?c.noun:c.nouns}</span><span class="m">${s.o} watched</span>${s.p?`<span class="m">${s.p} in progress</span>`:""}${s.w?`<span class="m">${s.w} TBW</span>`:""}`
@@ -899,7 +901,7 @@ function renderColHome(k){
   const at=`<button class="gt" data-cg="__all" style="border-left-color:var(--card)"><span class="gn">All ${esc(c.title)}</span><span class="m">${L.length} ${L.length==1?c.noun:c.nouns}</span><span class="m">${L.filter(c.doneOf).length} ${c.doneLab}</span></button>`;
   $("cview").innerHTML=`<div class="bar"><button data-cn="land">← Collections</button><button data-cn="add">+ Add ${esc(c.noun)}</button><button data-cn="imp">Import CSV</button><button data-cn="exp">Export CSV</button></div>
   <div class="gg">${wt}</div><h2 style="margin-top:14px">${c.groupHead}</h2>
-  <div class="gg">${at}${c.types?c.types.map(([tk,tl])=>gTile(k,{key:"__t:"+tk,label:tl,items:L.filter(o=>mtype(o)==tk)})).join(""):gs.length?gs.map(g=>gTile(k,g)).join(""):`<p class="m">Nothing here yet. Use “+ Add ${esc(c.noun)}” or “Import CSV” to get started.</p>`}</div>`;
+  <div class="gg">${c.types?"":at}${c.types?c.types.map(([tk,tl])=>gTile(k,{key:"__t:"+tk,label:tl,items:L.filter(o=>mtype(o)==tk)})).join(""):gs.length?gs.map(g=>gTile(k,g)).join(""):`<p class="m">Nothing here yet. Use “+ Add ${esc(c.noun)}” or “Import CSV” to get started.</p>`}</div>`;
 }
 function opts(vals,cur,any){return`<option value="">${any}</option>`+[...new Set(vals.filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),undefined,{numeric:true})).map(v=>`<option value="${esc(v)}"${v==cur?" selected":""}>${esc(v)}</option>`).join("")}
 function wviewBtn(k){return`<button data-cn="cwv">${cwv(k)=="groups"?"Switch to list view":"Switch to "+(k=="pokemon"?"generation":"series")+" buttons"}</button>`}
@@ -918,8 +920,8 @@ function renderMovieType(k,tk){
 function renderColList(k){
   const c=CFG[k],s=CS[k],items=scopeItems(k,curGrp);
   const title=scopeName(k,curGrp);
-  $("cview").innerHTML=`<div class="bar"><button data-cn="home">← ${esc(curGrp.startsWith("__wl:")?"Wishlist":k=="movies"&&!listOf(k,curGrp)&&curGrp!="__all"?typeLabel(k,curGrp.replace(/^__ta?:/,"").split("|")[0]):c.title)}</button><button data-cn="add">+ Add ${esc(c.noun)}</button></div><div class="bar" style="align-items:center;margin-top:6px"><h2 style="margin:0">${esc(title)}</h2>${curGrp=="__wishlist"&&CFG[k].flags?wviewBtn(k):""}${listOf(k,curGrp)&&listOf(k,curGrp).clear?`<button data-cn="clrw">${listOf(k,curGrp).clear.label}</button>`:""}</div>
-  <div class="bar"><input type="search" id="cq" placeholder="Search" aria-label="Search" value="${esc(s.q)}">
+  $("cview").innerHTML=`<div class="bar"><button data-cn="home">← ${esc(curGrp.startsWith("__wl:")?"Wishlist":k=="movies"&&!listOf(k,curGrp)&&curGrp!="__all"?typeLabel(k,curGrp.replace(/^__ta?:/,"").split("|")[0]):c.title)}</button><button data-cn="add">+ Add ${esc(c.noun)}</button><button data-cn="cftog" aria-expanded="${!CFH}">${CFH?"Show filters":"Hide filters"}</button></div><div class="bar" style="align-items:center;margin-top:6px"><h2 style="margin:0">${esc(title)}</h2>${curGrp=="__wishlist"&&CFG[k].flags?wviewBtn(k):""}${listOf(k,curGrp)&&listOf(k,curGrp).clear?`<button data-cn="clrw">${listOf(k,curGrp).clear.label}</button>`:""}</div>
+  <div class="bar"${CFH?" hidden":""}><input type="search" id="cq" placeholder="Search" aria-label="Search" value="${esc(s.q)}">
   <select id="cf1" aria-label="${c.f1.l}">${opts(items.map(x=>x[c.f1.k]),s.f1,c.f1.l+": any")}</select>
   ${c.f2?`<select id="cf2" aria-label="${c.f2.l}">${opts(items.map(x=>x[c.f2.k]),s.f2,c.f2.l+": any")}</select>`:""}
   ${c.flags?`<select id="co" aria-label="Owned"><option value="">Owned: any</option><option value="1"${s.o=="1"?" selected":""}>● Owned</option><option value="0"${s.o=="0"?" selected":""}>○ Not owned</option></select>`:`<select id="co" aria-label="Status"><option value="">Status: any</option>${["watched","in_progress","tbw"].map(v=>`<option value="${v}"${s.o==v?" selected":""}>${STL[v]}</option>`).join("")}<option value="none"${s.o=="none"?" selected":""}>No status</option></select>`}
@@ -968,7 +970,7 @@ function ctog(k,o,f){
 function crow(k,o,vs){
   const c=CFG[k],id=o[c.id];vs=vs||[];
   const vo=vs.some(v=>v.owned);
-  return`<div class="row${c.flags?(o.owned?(k=="funko"?" st-gr":" st-own"):vo?" st-own":o.wishlist?" st-wish":""):({watched:" st-gr",in_progress:" st-own",tbw:" st-wish"}[o.status]||"")}">${cimg(k,o)}<div class="main"><button class="t" data-cd="${esc(id)}" data-ck="${k}">${esc(c.title_of(o))}</button><div class="m">${esc(c.l1(o))}</div><div class="m">${esc(c.l2(o))}</div><div class="tg">${togs(k,o)}</div></div></div>`;
+  return`<div class="row${c.flags?(o.owned?(k=="funko"?" st-gr":" st-own"):vo?" st-own":o.wishlist&&!inWL()?" st-wish":""):({watched:" st-gr",in_progress:" st-own",tbw:" st-wish"}[o.status]||"")}">${cimg(k,o)}<div class="main"><button class="t" data-cd="${esc(id)}" data-ck="${k}">${esc(c.title_of(o))}</button><div class="m">${esc(c.l1(o))}</div><div class="m">${esc(c.l2(o))}</div><div class="tg">${togs(k,o)}</div></div></div>`;
 }
 /* ----- saving ----- */
 async function cupd(k,o,patch){
@@ -1212,6 +1214,7 @@ document.addEventListener("click",async e=>{
         else if(gk!="other"){const[g,r]=gk.split("|");pre.generation=+g;pre.region=r}else pre.card_type="Trainer"}
       if(ls)Object.assign(pre,ls.pre);
       cform(curK,null,pre)}
+    else if(n=="cftog"){CFH=!CFH;try{localStorage.setItem("cfiltersHidden",CFH?"1":"0")}catch(e){}renderColList(curK)}
     else if(n=="cwv"){CWV[curK]=cwv(curK)=="groups"?"list":"groups";try{localStorage.setItem("cwv_"+curK,CWV[curK])}catch(e){}renderCol();window.scrollTo(0,0)}
     else if(n=="imp")cimp(curK);else if(n=="exp")cexp(curK);
     else if(n=="clrw"){
