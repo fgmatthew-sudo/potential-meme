@@ -104,7 +104,7 @@ async function onSession(s){
   loadCols();history.replaceState({v:"land"},"");showLand(false);
 }
 // Diagnostic line (safe to show: it reveals only the project address and the start of the public key)
-try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v68`}
+try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v69`}
 catch(e){$("diag").textContent=`Check: the Supabase address is not a valid web address (${JSON.stringify(SUPABASE_URL)}) · app v4`}
 if(SUPABASE_URL.startsWith("YOUR_")){showLogin("Set SUPABASE_URL and SUPABASE_ANON_KEY at the top of index.html.");$("gin").hidden=true}
 else if(!window.supabase){showLogin("Could not load the Supabase library. Check your connection.");$("gin").hidden=true}
@@ -742,25 +742,15 @@ const CFG={
     fields:[
       {k:"dex_number",l:"Pokédex number",t:"dex",half:1,ph:"1–1025"},
       {k:"name",l:"Pokémon / card name",req:1,half:1,ph:"e.g. Pikachu"},
-      {k:"card_type",l:"Card type",half:1,sel:["Pokémon","Trainer","Energy"]},
-      {k:"energy_type",l:"Type",half:1,list:["Grass","Fire","Water","Lightning","Psychic","Fighting","Darkness","Metal","Dragon","Fairy","Colorless"]},
       {k:"generation",l:"Generation (blank = from Pokédex #)",t:"gen",half:1,sel:["","1","2","3","4","5","6","7","8","9"]},
       {k:"region",l:"Region (blank = from Pokédex #)",half:1,list:REGIONS},
-      {k:"artist",l:"Artist / illustrator",list:1,ph:"e.g. Mitsuhiro Arita"},
       {k:"rarity",l:"Rarity",half:1,list:["Common","Uncommon","Rare","Rare Holo","Double Rare","Ultra Rare","Illustration Rare","Special Illustration Rare","Hyper Rare","Secret Rare","Shiny Rare","Promo","ACE SPEC Rare","Amazing Rare","Radiant Rare"]},
-      {k:"finish",l:"Finish",half:1,list:["Non-holo","Holo","Reverse holo","Full art","Textured","Cosmos holo","Cracked ice","Gold","Rainbow","Stamped"]},
       {k:"set_name",l:"Set / expansion",list:1,half:1,ph:"e.g. Base Set"},
-      {k:"card_number",l:"Card number",half:1,ph:"e.g. 025/165"},
       {k:"release_year",l:"Release year",t:"year",half:1},
-      {k:"language",l:"Language",half:1,list:["English","Japanese","German","French","Spanish","Italian","Portuguese","Korean","Chinese"]},
       {k:"condition",l:"Condition",half:1,sel:["","Mint","Near Mint","Lightly Played","Moderately Played","Heavily Played","Damaged"]},
-      {k:"graded",l:"Graded (e.g. PSA 10)",half:1},
-      {k:"quantity",l:"Quantity",t:"qty",half:1},
-      {k:"purchase_price",l:"Purchase price",t:"num",half:1},
-      {k:"current_value",l:"Current value",t:"num",half:1},
       {k:"notes",l:"Notes",t:"area"}],
     f1:{k:"rarity",l:"Rarity"},f2:{k:"set_name",l:"Set"},
-    dupe:o=>[o.name,o.set_name,o.card_number,o.finish,o.language].map(x=>String(x||"").trim().toLowerCase()).join("|"),
+    dupe:o=>[o.name,o.set_name,o.dex_number].map(x=>String(x||"").trim().toLowerCase()).join("|"),
     group:o=>{
       let g=o.generation,r=o.region;
       if(!g&&o.dex_number)g=(genOf(o.dex_number)||{}).n;
@@ -768,17 +758,17 @@ const CFG={
       return g?{key:g+"|"+r,label:`Gen ${g} · ${r}`,sort:g}:{key:"other",label:"Trainers, Energy & other",sort:99};
     },
     title_of:o=>(o.dex_number?"#"+pad3(o.dex_number)+" ":"")+o.name,
-    l1:o=>[o.set_name,o.card_number].filter(Boolean).join(" · "),
-    l2:o=>[o.rarity,o.finish&&o.finish!="Non-holo"?o.finish:"",o.artist?"🎨 "+o.artist:"",o.graded,o.quantity>1?"×"+o.quantity:""].filter(Boolean).join(" · "),
+    l1:o=>[o.set_name,o.release_year].filter(Boolean).join(" · "),
+    l2:o=>[o.rarity,o.condition].filter(Boolean).join(" · "),
     sorts:[["num","Pokédex number"],["name","Name"],["rar","Rarity"],["new","Recently added"]],
     cmp:{num:(a,b)=>(a.dex_number||1e9)-(b.dex_number||1e9)||String(a.name).localeCompare(b.name),name:(a,b)=>String(a.name).localeCompare(b.name),
       rar:(a,b)=>String(a.rarity||"~").localeCompare(String(b.rarity||"~"))||String(a.name).localeCompare(b.name),new:(a,b)=>String(b.created_at||"").localeCompare(String(a.created_at||""))},
-    searchIn:["name","dex_number","artist","rarity","set_name","card_number","finish","region","notes"],
-    defaults:()=>({owned:true,wishlist:false,card_type:"Pokémon",language:"English",quantity:1})}
+    searchIn:["name","dex_number","rarity","set_name","region","notes"],
+    defaults:()=>({owned:true,wishlist:false})}
 };
 const WL={key:"__wishlist",label:"Wishlist",test:o=>o.wishlist&&!o.owned,color:"var(--blb)",pre:{owned:false,wishlist:true},clear:{label:"Clear wishlist",count:o=>o.wishlist,patch:{wishlist:false},col:"wishlist",val:true,what:"wishlist"}};
 Object.assign(CFG.funko,{flags:1,doneOf:o=>o.owned,doneLab:"owned",lists:[WL],groupHead:"Series",sql:"add-collections.sql",imgLabel:"Search the web for this Pop",imgQ:o=>"Funko Pop "+[o.series,o.name,o.number?"#"+o.number:""].filter(Boolean).join(" ")});
-Object.assign(CFG.pokemon,{flags:1,doneOf:o=>o.owned,doneLab:"owned",lists:[WL],groupHead:"Generations",sql:"add-collections.sql",imgLabel:"Search the web for this card",imgQ:o=>"Pokemon card "+[o.name,o.set_name,o.card_number].filter(Boolean).join(" ")});
+Object.assign(CFG.pokemon,{flags:1,doneOf:o=>o.owned,doneLab:"owned",lists:[WL],groupHead:"Generations",sql:"add-collections.sql",imgLabel:"Search the web for this card",imgQ:o=>"Pokemon card "+[o.name,o.set_name].filter(Boolean).join(" ")});
 const STL={watched:"✓ Watched",in_progress:"◐ In progress",tbw:"★ TBW"};
 CFG.movies={k:"movies",icon:"🎬",title:"Movies / Series",noun:"title",nouns:"titles",table:"movies_series",id:"title_id",color:"#7d8fd6",grpLabel:"Genre",groupHead:"Browse",sql:"add-movies.sql",
   doneOf:o=>o.status=="watched",doneLab:"watched",
@@ -1020,7 +1010,6 @@ function cnormalize(k,r){
     if(r.dex_number&&!r.generation){const g=genOf(r.dex_number);if(g)r.generation=g.n}
     if(r.generation&&!r.region)r.region=GEN[r.generation].r;
     if(r.region){const m=REGIONS.find(x=>x.toLowerCase()==r.region.toLowerCase());if(m)r.region=m}
-    if(r.quantity==null)r.quantity=1;
   }
   if(CFG[k].flags&&r.owned)r.wishlist=false;
   return r;
@@ -1105,15 +1094,14 @@ function cimgDlg(k,o){
     if($("xi_art"))$("xi_art").onclick=()=>save({image_url:`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${o.dex_number}.png`});
     const search=async()=>{
       const name=$("xi_q").value.replace(/["\\]/g,"").trim();if(!name){say("Enter a name to search for.");return}
-      const parts=[`name:"${name}"`],n=String(o.card_number||"").split("/")[0].replace(/^0+/,"");
-      if(n&&/^[A-Za-z0-9-]+$/.test(n))parts.push("number:"+n);
+      const parts=[`name:"${name}"`],n="";
       say("Searching…");$("xi_r").innerHTML="";
       try{
         const r=await fetch("https://api.pokemontcg.io/v2/cards?pageSize=24&orderBy=-set.releaseDate&q="+encodeURIComponent(parts.join(" ")));
         if(!r.ok)throw new Error("The card database answered "+r.status);
         found=(await r.json()).data||[];
         if(!found.length){say(n?"No matches. Try clearing the card number on this item, or a shorter name.":"No matches. Try a shorter name.");return}
-        say("Tap a card to use its image. Blank details (artist, rarity, set, number) are filled in too.");
+        say("Tap a card to use its image. Blank details (rarity, set, year) are filled in too.");
         $("xi_r").innerHTML=found.map((x,i)=>`<button class="ci" data-xr="${i}"><img src="${esc(x.images&&x.images.small||"")}" alt="${esc(x.name)}" loading="lazy" referrerpolicy="no-referrer"><span>${esc((x.set&&x.set.name||"")+" "+(x.number||""))}</span></button>`).join("");
       }catch(err){say("Search failed: "+err.message+". You can still paste an address or upload a photo.")}
     };
@@ -1121,14 +1109,10 @@ function cimgDlg(k,o){
     $("xi_r").onclick=e=>{
       const b=e.target.closest("[data-xr]");if(!b)return;const x=found[+b.dataset.xr];if(!x)return;
       const p={image_url:x.images&&(x.images.large||x.images.small)||null};
-      if(!o.artist&&x.artist)p.artist=x.artist;
       if(!o.rarity&&x.rarity)p.rarity=x.rarity;
       if(!o.set_name&&x.set&&x.set.name)p.set_name=x.set.name;
-      if(!o.card_number&&x.number)p.card_number=x.set&&x.set.printedTotal?`${x.number}/${x.set.printedTotal}`:x.number;
       if(!o.release_year&&x.set&&x.set.releaseDate)p.release_year=+String(x.set.releaseDate).slice(0,4)||null;
-      if(!o.energy_type&&x.types&&x.types[0])p.energy_type=x.types[0];
       if(!o.dex_number&&x.nationalPokedexNumbers&&x.nationalPokedexNumbers[0]){p.dex_number=x.nationalPokedexNumbers[0];const g=genOf(p.dex_number);if(g&&!o.generation){p.generation=g.n;if(!o.region)p.region=g.r}}
-      if(x.supertype&&["Trainer","Energy"].includes(x.supertype))p.card_type=x.supertype;
       save(p);
     };
   }
@@ -1211,7 +1195,7 @@ document.addEventListener("click",async e=>{
       if(gk&&gk!="__all"&&!ls){
         if(curK=="funko")pre.series=(groupsOf(curK).find(g=>g.key==gk)||{}).label;
         else if(curK=="movies"){if(/^__ta?:/.test(curGrp))pre.media_type=curGrp.replace(/^__ta?:/,"");else{pre.media_type=curGrp.split("|")[0];const gl=(groupsOf(curK).find(g=>g.key==curGrp)||{}).label;if(gl&&gl!="No genre")pre.genre=gl}}
-        else if(gk!="other"){const[g,r]=gk.split("|");pre.generation=+g;pre.region=r}else pre.card_type="Trainer"}
+        else if(gk!="other"){const[g,r]=gk.split("|");pre.generation=+g;pre.region=r}}
       if(ls)Object.assign(pre,ls.pre);
       cform(curK,null,pre)}
     else if(n=="cftog"){CFH=!CFH;try{localStorage.setItem("cfiltersHidden",CFH?"1":"0")}catch(e){}renderColList(curK)}
