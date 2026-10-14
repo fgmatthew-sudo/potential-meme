@@ -104,7 +104,7 @@ async function onSession(s){
   loadCols();history.replaceState({v:"land"},"");showLand(false);
 }
 // Diagnostic line (safe to show: it reveals only the project address and the start of the public key)
-try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v71`}
+try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v73`}
 catch(e){$("diag").textContent=`Check: the Supabase address is not a valid web address (${JSON.stringify(SUPABASE_URL)}) · app v4`}
 if(SUPABASE_URL.startsWith("YOUR_")){showLogin("Set SUPABASE_URL and SUPABASE_ANON_KEY at the top of index.html.");$("gin").hidden=true}
 else if(!window.supabase){showLogin("Could not load the Supabase library. Check your connection.");$("gin").hidden=true}
@@ -225,14 +225,14 @@ function tileColor(name){const k=String(name).trim().toLowerCase(),c=TILE[ALIAS[
 const obar=(o,n)=>`<span class="pb ob" role="progressbar" aria-valuemin="0" aria-valuemax="${n}" aria-valuenow="${o}" aria-label="${o} of ${n} books owned" title="${o} of ${n} books owned"><i style="width:${n?Math.round(100*o/n):0}%"></i></span>`;
 const pbar=(d,o)=>`<span class="pb" role="progressbar" aria-valuemin="0" aria-valuemax="${o}" aria-valuenow="${d}" aria-label="${d} of ${o} owned books read" title="${d} of ${o} owned books read"><i style="width:${o?Math.round(100*d/o):0}%"></i></span>`;
 function renderHome(){
-  const by={};books.forEach(b=>{const x=(by[b.genre_id]??={n:0,r:0,o:0,d:0,j:0});x.n++;if(b.read)x.r++;if(b.read_mjg)x.j++;if(b.owned)x.o++;if(b.owned&&b.read)x.d++});
+  const by={};books.forEach(b=>{const x=(by[b.genre_id]??={n:0,r:0,o:0,d:0,e:0,j:0});x.n++;if(b.read)x.r++;if(b.read_mjg)x.j++;if(b.owned)x.o++;if(b.owned&&b.read)x.d++;if(b.owned&&b.read_mjg)x.e++});
   const gl=genres.filter(g=>by[g.genre_id]).sort((x,y)=>x.name.localeCompare(y.name));
   const tile=(id,name,n,r,h,o,d,j)=>`<button class="gt${tileColor(name)||(id===""?`" style="border-left-color:var(--card)`:`" style="border-left-color:hsl(${h} 45% 45%)`)}" data-genre="${esc(id)}"><span class="gn">${esc(name)}</span><span class="m">${n} book${n==1?"":"s"}</span><span class="m">${o} owned</span><span class="m">${r} read MFG</span><span class="m">${j} read MJG</span>${obar(o,n)}${pbar(d,o)}</button>`;
   const sp=(id,name,n,h)=>`<button class="gt${tileColor(name)}" data-genre="${id}"><span class="gn">${name}</span><span class="m">${n} book${n==1?"":"s"}</span></button>`;
   $("lists").innerHTML=sp("__wishlist","Wishlist",books.filter(b=>b.wishlist&&!b.owned).length,340)+sp("__tbr","TBR",books.filter(b=>b.tbr).length,200)+sp("__readmfg","Books Read MFG",books.filter(b=>b.read).length,270)+sp("__readmjg","Books Read MJG",books.filter(b=>b.read_mjg).length,320)+sp("__mjg","Safe for MJG",books.filter(b=>b.safe_mjg&&!b.owned).length,30);
   $("hcnt").textContent=books.length?`${books.length} book${books.length==1?"":"s"} in ${gl.length} genre${gl.length==1?"":"s"}`:"";
   $("genres").innerHTML=books.length
-    ?tile("","All books",books.length,books.filter(b=>b.read).length,30,books.filter(b=>b.owned).length,books.filter(b=>b.owned&&b.read).length,books.filter(b=>b.read_mjg).length)+gl.map(g=>tile(g.genre_id,g.name,by[g.genre_id].n,by[g.genre_id].r,hue(g.genre_id),by[g.genre_id].o,by[g.genre_id].d,by[g.genre_id].j)).join("")
+    ?tile("","All books",books.length,books.filter(b=>b.read).length,30,books.filter(b=>b.owned).length,Math.max(books.filter(b=>b.owned&&b.read).length,books.filter(b=>b.owned&&b.read_mjg).length),books.filter(b=>b.read_mjg).length)+gl.map(g=>tile(g.genre_id,g.name,by[g.genre_id].n,by[g.genre_id].r,hue(g.genre_id),by[g.genre_id].o,Math.max(by[g.genre_id].d,by[g.genre_id].e),by[g.genre_id].j)).join("")
     :'<p class="m">No books yet. Use “+ Add book” or “Import CSV” to get started.</p>';
 }
 function render(){renderHome();renderList();renderBingo()}
@@ -272,12 +272,12 @@ function renderSeriesBtns(){
     box.innerHTML=Object.keys(gc).sort((x,y)=>G(x).name.localeCompare(G(y).name)).map(gid=>`<button class="gt${tileColor(G(gid).name)||`" style="border-left-color:hsl(${hue(gid)} 45% 45%)`}" data-wg="${esc(gid)}" style="min-height:0"><span class="gn">${esc(G(gid).name)}</span><span class="m">${gc[gid]} book${gc[gid]==1?"":"s"}</span></button>`).join("")||'<p class="m">Your wishlist is empty.</p>';
     return;
   }
-  const by={},gen={};let alone={n:0,o:0,r:0,w:0,d:0,j:0};
-  sc.forEach(b=>{const x=b.series_id?(by[b.series_id]??={n:0,o:0,r:0,w:0,d:0,j:0}):alone;if(b.series_id)gen[b.series_id]??=b.genre_id;x.n++;if(b.owned)x.o++;if(b.read)x.r++;if(b.read_mjg)x.j++;if(b.wishlist&&!b.owned)x.w++;if(b.owned&&b.read)x.d++});
+  const by={},gen={};let alone={n:0,o:0,r:0,w:0,d:0,e:0,j:0};
+  sc.forEach(b=>{const x=b.series_id?(by[b.series_id]??={n:0,o:0,r:0,w:0,d:0,e:0,j:0}):alone;if(b.series_id)gen[b.series_id]??=b.genre_id;x.n++;if(b.owned)x.o++;if(b.read)x.r++;if(b.read_mjg)x.j++;if(b.wishlist&&!b.owned)x.w++;if(b.owned&&b.read)x.d++;if(b.owned&&b.read_mjg)x.e++});
   const ids=Object.keys(by).sort((x,y)=>S(x).name.localeCompare(S(y).name));
   const first=id=>sc.filter(b=>b.series_id==id).sort((x,y)=>(x.reading_order??1e9)-(y.reading_order??1e9)||x.title.localeCompare(y.title))[0];
   const col=(gid,name)=>tileColor(name)||`" style="border-left-color:hsl(${hue(gid)} 45% 45%)`;
-  const t=(v,l,x,f,gc)=>`<button class="gt${x.d==x.n?" done":(x.o?" own":"")+(x.w&&special!="wishlist"?" wish":"")}${gc}" data-ser="${esc(v)}"><span class="gn">${esc(l)}</span><span class="sr"><span class="si"><span class="m">${x.n} book${x.n==1?"":"s"}</span><span class="m">${x.o} owned</span><span class="m">${x.r} read MFG</span><span class="m">${x.j} read MJG</span></span>${f?coverBox(f):""}</span>${obar(x.o,x.n)}${pbar(x.d,x.o)}</button>`;
+  const t=(v,l,x,f,gc)=>`<button class="gt${Math.max(x.d,x.e)==x.n?" done":(x.o?" own":"")+(x.w&&special!="wishlist"?" wish":"")}${gc}" data-ser="${esc(v)}"><span class="gn">${esc(l)}</span><span class="sr"><span class="si"><span class="m">${x.n} book${x.n==1?"":"s"}</span><span class="m">${x.o} owned</span><span class="m">${x.r} read MFG</span><span class="m">${x.j} read MJG</span></span>${f?coverBox(f):""}</span>${obar(x.o,x.n)}${pbar(Math.max(x.d,x.e),x.o)}</button>`;
   box.innerHTML=ids.map(i=>t(i,S(i).name,by[i],first(i),col(gen[i],G(gen[i]).name))).join("")+(alone.n?t("__s","Standalone",alone,null,special?tileColor(special=="mjg"?"Safe for MJG":"Wishlist"):col(g,G(g).name)):"");
 }
 function renderList(){
@@ -877,7 +877,7 @@ function stat(k,g){
 function gTile(k,g){
   const s=stat(k,g),c=CFG[k];
   const done=s.t!=null?s.u==s.t:(s.n>0&&s.o==s.n);
-  const cls=k=="movies"?((s.n>0&&s.o==s.n)?" done":(s.p?" own":"")+(s.w?" wish":"")):done?" done":(s.o?" own":"")+(s.w?" wish":"");
+  const cls=k=="movies"?((s.n>0&&s.o==s.n)?" done":""):done?" done":(k=="funko"?"":(s.o?" own":"")+(s.w?" wish":""));
   const bar=s.t!=null?[s.u,s.t]:[s.o,s.n];
   const lines=k=="movies"
     ?`<span class="m">${s.n} ${s.n==1?c.noun:c.nouns}</span><span class="m">${s.o} watched</span>${s.p?`<span class="m">${s.p} in progress</span>`:""}${s.w?`<span class="m">${s.w} TBW</span>`:""}`
