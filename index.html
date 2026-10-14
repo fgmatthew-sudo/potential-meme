@@ -104,7 +104,7 @@ async function onSession(s){
   loadCols();history.replaceState({v:"land"},"");showLand(false);
 }
 // Diagnostic line (safe to show: it reveals only the project address and the start of the public key)
-try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v73`}
+try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v74`}
 catch(e){$("diag").textContent=`Check: the Supabase address is not a valid web address (${JSON.stringify(SUPABASE_URL)}) · app v4`}
 if(SUPABASE_URL.startsWith("YOUR_")){showLogin("Set SUPABASE_URL and SUPABASE_ANON_KEY at the top of index.html.");$("gin").hidden=true}
 else if(!window.supabase){showLogin("Could not load the Supabase library. Check your connection.");$("gin").hidden=true}
@@ -755,13 +755,8 @@ const CFG={
       {k:"name",l:"Pokémon / card name",req:1,half:1,ph:"e.g. Pikachu"},
       {k:"generation",l:"Generation (blank = from Pokédex #)",t:"gen",half:1,sel:["","1","2","3","4","5","6","7","8","9"]},
       {k:"region",l:"Region (blank = from Pokédex #)",half:1,list:REGIONS},
-      {k:"rarity",l:"Rarity",half:1,list:["Common","Uncommon","Rare","Rare Holo","Double Rare","Ultra Rare","Illustration Rare","Special Illustration Rare","Hyper Rare","Secret Rare","Shiny Rare","Promo","ACE SPEC Rare","Amazing Rare","Radiant Rare"]},
-      {k:"set_name",l:"Set / expansion",list:1,half:1,ph:"e.g. Base Set"},
-      {k:"release_year",l:"Release year",t:"year",half:1},
-      {k:"condition",l:"Condition",half:1,sel:["","Mint","Near Mint","Lightly Played","Moderately Played","Heavily Played","Damaged"]},
       {k:"notes",l:"Notes",t:"area"}],
-    f1:{k:"rarity",l:"Rarity"},f2:{k:"set_name",l:"Set"},
-    dupe:o=>[o.name,o.set_name,o.dex_number].map(x=>String(x||"").trim().toLowerCase()).join("|"),
+    dupe:o=>[o.name,o.dex_number].map(x=>String(x||"").trim().toLowerCase()).join("|"),
     group:o=>{
       let g=o.generation,r=o.region;
       if(!g&&o.dex_number)g=(genOf(o.dex_number)||{}).n;
@@ -769,17 +764,17 @@ const CFG={
       return g?{key:g+"|"+r,label:`Gen ${g} · ${r}`,sort:g}:{key:"other",label:"Trainers, Energy & other",sort:99};
     },
     title_of:o=>(o.dex_number?"#"+pad3(o.dex_number)+" ":"")+o.name,
-    l1:o=>[o.set_name,o.release_year].filter(Boolean).join(" · "),
-    l2:o=>[o.rarity,o.condition].filter(Boolean).join(" · "),
-    sorts:[["num","Pokédex number"],["name","Name"],["rar","Rarity"],["new","Recently added"]],
+    l1:o=>"",
+    l2:o=>"",
+    sorts:[["num","Pokédex number"],["name","Name"],["new","Recently added"]],
     cmp:{num:(a,b)=>(a.dex_number||1e9)-(b.dex_number||1e9)||String(a.name).localeCompare(b.name),name:(a,b)=>String(a.name).localeCompare(b.name),
-      rar:(a,b)=>String(a.rarity||"~").localeCompare(String(b.rarity||"~"))||String(a.name).localeCompare(b.name),new:(a,b)=>String(b.created_at||"").localeCompare(String(a.created_at||""))},
-    searchIn:["name","dex_number","rarity","set_name","region","notes"],
+      new:(a,b)=>String(b.created_at||"").localeCompare(String(a.created_at||""))},
+    searchIn:["name","dex_number","region","notes"],
     defaults:()=>({owned:true,wishlist:false})}
 };
 const WL={key:"__wishlist",label:"Wishlist",test:o=>o.wishlist&&!o.owned,color:"var(--blb)",pre:{owned:false,wishlist:true},clear:{label:"Clear wishlist",count:o=>o.wishlist,patch:{wishlist:false},col:"wishlist",val:true,what:"wishlist"}};
 Object.assign(CFG.funko,{flags:1,doneOf:o=>o.owned,doneLab:"owned",lists:[WL],groupHead:"Series",sql:"add-collections.sql",imgLabel:"Search the web for this Pop",imgQ:o=>"Funko Pop "+[o.series,o.name,o.number?"#"+o.number:""].filter(Boolean).join(" ")});
-Object.assign(CFG.pokemon,{flags:1,doneOf:o=>o.owned,doneLab:"owned",lists:[WL],groupHead:"Generations",sql:"add-collections.sql",imgLabel:"Search the web for this card",imgQ:o=>"Pokemon card "+[o.name,o.set_name].filter(Boolean).join(" ")});
+Object.assign(CFG.pokemon,{flags:1,doneOf:o=>o.owned,doneLab:"owned",lists:[WL],groupHead:"Generations",sql:"add-collections.sql",imgLabel:"Search the web for this card",imgQ:o=>"Pokemon card "+o.name});
 const STL={watched:"✓ Watched",in_progress:"◐ In progress",tbw:"★ TBW"};
 CFG.movies={k:"movies",icon:"🎬",title:"Movies / Series",noun:"title",nouns:"titles",table:"movies_series",id:"title_id",color:"#7d8fd6",grpLabel:"Genre",groupHead:"Browse",sql:"add-movies.sql",
   doneOf:o=>o.status=="watched",doneLab:"watched",
@@ -923,7 +918,7 @@ function renderColList(k){
   const title=scopeName(k,curGrp);
   $("cview").innerHTML=`<div class="bar"><button data-cn="home">← ${esc(curGrp.startsWith("__wl:")?"Wishlist":k=="movies"&&!listOf(k,curGrp)&&curGrp!="__all"?typeLabel(k,curGrp.replace(/^__ta?:/,"").split("|")[0]):c.title)}</button><button data-cn="add">+ Add ${esc(c.noun)}</button><button data-cn="cftog" aria-expanded="${!CFH}">${CFH?"Show filters":"Hide filters"}</button></div><div class="bar" style="align-items:center;margin-top:6px"><h2 style="margin:0">${esc(title)}</h2>${curGrp=="__wishlist"&&CFG[k].flags?wviewBtn(k):""}${listOf(k,curGrp)&&listOf(k,curGrp).clear?`<button data-cn="clrw">${listOf(k,curGrp).clear.label}</button>`:""}</div>
   <div class="bar"${CFH?" hidden":""}><input type="search" id="cq" placeholder="Search" aria-label="Search" value="${esc(s.q)}">
-  <select id="cf1" aria-label="${c.f1.l}">${opts(items.map(x=>x[c.f1.k]),s.f1,c.f1.l+": any")}</select>
+  ${c.f1?`<select id="cf1" aria-label="${c.f1.l}">${opts(items.map(x=>x[c.f1.k]),s.f1,c.f1.l+": any")}</select>`:""}
   ${c.f2?`<select id="cf2" aria-label="${c.f2.l}">${opts(items.map(x=>x[c.f2.k]),s.f2,c.f2.l+": any")}</select>`:""}
   ${c.flags?`<select id="co" aria-label="Owned"><option value="">Owned: any</option><option value="1"${s.o=="1"?" selected":""}>● Owned</option><option value="0"${s.o=="0"?" selected":""}>○ Not owned</option></select>`:`<select id="co" aria-label="Status"><option value="">Status: any</option>${["watched","in_progress","tbw"].map(v=>`<option value="${v}"${s.o==v?" selected":""}>${STL[v]}</option>`).join("")}<option value="none"${s.o=="none"?" selected":""}>No status</option></select>`}
   <select id="cso" aria-label="Sort">${c.sorts.map(x=>`<option value="${x[0]}"${s.so==x[0]?" selected":""}>Sort: ${x[1]}</option>`).join("")}</select></div>
@@ -933,7 +928,7 @@ function renderColList(k){
 function fillColList(){
   const k=curK,c=CFG[k],s=CS[k];let items=scopeItems(k,curGrp);
   const q=s.q.trim().toLowerCase();
-  items=items.filter(o=>(!q||c.searchIn.some(f=>String(o[f]??"").toLowerCase().includes(q)))&&(!s.f1||o[c.f1.k]==s.f1)&&(!c.f2||!s.f2||o[c.f2.k]==s.f2)&&(s.o===""||(c.flags?(s.o=="1")==!!o.owned:(s.o=="none"?!o.status:o.status==s.o))));
+  items=items.filter(o=>(!q||c.searchIn.some(f=>String(o[f]??"").toLowerCase().includes(q)))&&(!c.f1||!s.f1||o[c.f1.k]==s.f1)&&(!c.f2||!s.f2||o[c.f2.k]==s.f2)&&(s.o===""||(c.flags?(s.o=="1")==!!o.owned:(s.o=="none"?!o.status:o.status==s.o))));
   items=items.slice().sort(c.cmp[s.so]||c.cmp[c.sorts[0][0]]);
   $("ccnt").textContent=`${items.length} ${items.length==1?c.noun:c.nouns}`;
   $("clist").innerHTML=groupVariants(k,items).map(x=>crow(k,x.o,x.v)).join("")||'<p class="m">Nothing matches.</p>';
@@ -1112,7 +1107,7 @@ function cimgDlg(k,o){
         if(!r.ok)throw new Error("The card database answered "+r.status);
         found=(await r.json()).data||[];
         if(!found.length){say(n?"No matches. Try clearing the card number on this item, or a shorter name.":"No matches. Try a shorter name.");return}
-        say("Tap a card to use its image. Blank details (rarity, set, year) are filled in too.");
+        say("Tap a card to use its image.");
         $("xi_r").innerHTML=found.map((x,i)=>`<button class="ci" data-xr="${i}"><img src="${esc(x.images&&x.images.small||"")}" alt="${esc(x.name)}" loading="lazy" referrerpolicy="no-referrer"><span>${esc((x.set&&x.set.name||"")+" "+(x.number||""))}</span></button>`).join("");
       }catch(err){say("Search failed: "+err.message+". You can still paste an address or upload a photo.")}
     };
@@ -1120,9 +1115,6 @@ function cimgDlg(k,o){
     $("xi_r").onclick=e=>{
       const b=e.target.closest("[data-xr]");if(!b)return;const x=found[+b.dataset.xr];if(!x)return;
       const p={image_url:x.images&&(x.images.large||x.images.small)||null};
-      if(!o.rarity&&x.rarity)p.rarity=x.rarity;
-      if(!o.set_name&&x.set&&x.set.name)p.set_name=x.set.name;
-      if(!o.release_year&&x.set&&x.set.releaseDate)p.release_year=+String(x.set.releaseDate).slice(0,4)||null;
       if(!o.dex_number&&x.nationalPokedexNumbers&&x.nationalPokedexNumbers[0]){p.dex_number=x.nationalPokedexNumbers[0];const g=genOf(p.dex_number);if(g&&!o.generation){p.generation=g.n;if(!o.region)p.region=g.r}}
       save(p);
     };
