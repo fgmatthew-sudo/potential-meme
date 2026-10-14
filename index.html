@@ -3,15 +3,15 @@
 <title>GFG Collections</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{--bg:#faf7f2;--fg:#2a2622;--mut:#7a7168;--card:#fff;--bd:#e4ddd2;--ok:#2f7d4f;--okbg:#e3f3e9;--ac:#8a4b2a;--er:#c0392b;--yw:#FFEE8C;--ywb:#e3cf6a;--gn:#C1E1C1;--gnb:#8dbf8d;--bl:#A7C7E7;--blb:#7fa6cf;--or:#fbdcb8;--orb:#e8b27c;--rd:#f8d4d4;--rdb:#e19a9a;--mf:#DCCEF3;--mfb:#A88FD6;--mj:#F6CADF;--mjb:#DC8FB8;--onc:#2a2622;--onm:#4f5660}
-@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#1b1917;--fg:#eee8df;--mut:#a39a8e;--card:#262321;--bd:#3a3531;--ok:#6fcf97;--okbg:#1f3a2a;--ac:#e0a47e;--er:#ff8a7a;--yw:#756818;--ywb:#b7a53a;--gn:#2d5a3b;--gnb:#5c9a6c;--bl:#2d4c70;--blb:#5886b3;--onc:var(--fg);--onm:#e0d9cc;--or:#4a3319;--orb:#7a5530;--rd:#4a2222;--rdb:#844545;--mf:#47355f;--mfb:#8a6cc0;--mj:#5c2a45;--mjb:#b0628c}}:root[data-theme=dark]{--bg:#1b1917;--fg:#eee8df;--mut:#a39a8e;--card:#262321;--bd:#3a3531;--ok:#6fcf97;--okbg:#1f3a2a;--ac:#e0a47e;--er:#ff8a7a;--yw:#756818;--ywb:#b7a53a;--gn:#2d5a3b;--gnb:#5c9a6c;--bl:#2d4c70;--blb:#5886b3;--onc:var(--fg);--onm:#e0d9cc;--or:#4a3319;--orb:#7a5530;--rd:#4a2222;--rdb:#844545;--mf:#47355f;--mfb:#8a6cc0;--mj:#5c2a45;--mjb:#b0628c}:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+:root{--bg:#faf7f2;--fg:#2a2622;--mut:#7a7168;--card:#fff;--bd:#e4ddd2;--ok:#2f7d4f;--okbg:#e3f3e9;--ac:#8a4b2a;--er:#c0392b;--yw:#FFEE8C;--ywb:#e3cf6a;--gn:#C1E1C1;--gnb:#8dbf8d;--bl:#A7C7E7;--blb:#7fa6cf;--or:#fbdcb8;--orb:#e8b27c;--rd:#f8d4d4;--rdb:#e19a9a;--mf:#BDE6E0;--mfb:#5FB3AA;--mj:#F6CADF;--mjb:#DC8FB8;--onc:#2a2622;--onm:#4f5660}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#1b1917;--fg:#eee8df;--mut:#a39a8e;--card:#262321;--bd:#3a3531;--ok:#6fcf97;--okbg:#1f3a2a;--ac:#e0a47e;--er:#ff8a7a;--yw:#756818;--ywb:#b7a53a;--gn:#2d5a3b;--gnb:#5c9a6c;--bl:#2d4c70;--blb:#5886b3;--onc:var(--fg);--onm:#e0d9cc;--or:#4a3319;--orb:#7a5530;--rd:#4a2222;--rdb:#844545;--mf:#1f4d49;--mfb:#4a9a92;--mj:#5c2a45;--mjb:#b0628c}}:root[data-theme=dark]{--bg:#1b1917;--fg:#eee8df;--mut:#a39a8e;--card:#262321;--bd:#3a3531;--ok:#6fcf97;--okbg:#1f3a2a;--ac:#e0a47e;--er:#ff8a7a;--yw:#756818;--ywb:#b7a53a;--gn:#2d5a3b;--gnb:#5c9a6c;--bl:#2d4c70;--blb:#5886b3;--onc:var(--fg);--onm:#e0d9cc;--or:#4a3319;--orb:#7a5530;--rd:#4a2222;--rdb:#844545;--mf:#1f4d49;--mfb:#4a9a92;--mj:#5c2a45;--mjb:#b0628c}:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
 *{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}
 body{background:var(--bg);color:var(--fg);font:15px/1.4 Georgia,'Times New Roman',serif;padding:12px 14px 40px;max-width:900px;margin:auto}
 h1{font-size:22px;margin:4px 0 10px}h2{font-size:17px;margin:20px 0 8px;color:var(--ac)}
 .bar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.top{align-items:center;justify-content:space-between}
 input,select,textarea,button{font:inherit;font-size:14px;color:var(--fg);background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:7px 9px;max-width:100%}
 input[type=search]{flex:1 1 100%}select{flex:1 1 130px}
-button{cursor:pointer}button[aria-pressed=true]{background:var(--okbg);border-color:var(--ok);color:var(--ok)}button[data-f=read][aria-pressed=true]{background:var(--mf);border-color:var(--mfb);color:var(--onc)}button[data-f=read_mjg][aria-pressed=true]{background:var(--mj);border-color:var(--mjb);color:var(--onc)}button[data-f=safe_mjg][aria-pressed=true]{background:var(--or);border-color:var(--orb);color:var(--fg)}button[data-f=owned][aria-pressed=true]{background:var(--yw);border-color:var(--ywb);color:var(--onc)}button[data-f=wishlist][aria-pressed=true]{background:var(--bl);border-color:var(--blb);color:var(--onc)}button[data-f=tbr][aria-pressed=true]{background:var(--rd);border-color:var(--rdb);color:var(--fg)}
+button{cursor:pointer}button[aria-pressed=true]{background:var(--okbg);border-color:var(--ok);color:var(--ok)}button[data-f=read][aria-pressed=true]{background:var(--mf);border-color:var(--mfb);color:var(--onc)}button[data-f=read_mjg][aria-pressed=true]{background:var(--or);border-color:var(--orb);color:var(--fg)}button[data-f=safe_mjg][aria-pressed=true]{background:var(--mj);border-color:var(--mjb);color:var(--onc)}button[data-f=owned][aria-pressed=true]{background:var(--yw);border-color:var(--ywb);color:var(--onc)}button[data-f=wishlist][aria-pressed=true]{background:var(--bl);border-color:var(--blb);color:var(--onc)}button[data-f=tbr][aria-pressed=true]{background:var(--rd);border-color:var(--rdb);color:var(--fg)}
 .cnt{color:var(--mut);font-size:13px;margin:4px 0}.err{color:var(--er)}
 .row{display:flex;gap:12px;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:10px;margin-bottom:8px}
 .cov{flex:0 0 56px;height:84px;border-radius:5px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:9px;padding:3px;color:#fff;overflow:hidden}
@@ -21,7 +21,7 @@ dialog{background:var(--card);color:var(--fg);border:1px solid var(--bd);border-
 dialog::backdrop{background:#0008}dl{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;margin:10px 0;font-size:14px}dt{color:var(--mut)}dd{margin:0}
 textarea{width:100%;min-height:70px}
 .fm label{display:block;font-size:13px;color:var(--mut);margin-top:8px}.fm input:not([type=checkbox]),.fm textarea{width:100%}.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.row.st-own{background:var(--yw);border-color:var(--ywb)}.row.st-wish{background:var(--bl);border-color:var(--blb)}.row.st-tbr{background:var(--rd);border-color:var(--rdb)}.row.st-mjg{background:var(--or);border-color:var(--orb)}.row.st-done{background:var(--gn);border-color:var(--gnb)}.row.st-mf{background:var(--mf);border-color:var(--mfb)}.row.st-mj{background:var(--mj);border-color:var(--mjb)}.row.st-mfj{background:linear-gradient(90deg,var(--mf) 50%,var(--mj) 50%);border-color:var(--mfb)}
+.row.st-own{background:var(--yw);border-color:var(--ywb)}.row.st-wish{background:var(--bl);border-color:var(--blb)}.row.st-tbr{background:var(--rd);border-color:var(--rdb)}.row.st-mjg{background:var(--mj);border-color:var(--mjb)}.row.st-done{background:var(--gn);border-color:var(--gnb)}.row.st-mf{background:var(--mf);border-color:var(--mfb)}.row.st-mj{background:var(--or);border-color:var(--orb)}.row.st-mfj{background:linear-gradient(90deg,var(--mf) 50%,var(--or) 50%);border-color:var(--mfb)}
 .cov.has{padding:0}.cov img{width:100%;height:100%;object-fit:cover;border-radius:5px;display:block}
 .cov.big{flex:none;width:130px;height:195px;font-size:12px;margin:0 0 10px}
 .cg{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;margin:10px 0}
@@ -104,7 +104,7 @@ async function onSession(s){
   loadCols();history.replaceState({v:"land"},"");showLand(false);
 }
 // Diagnostic line (safe to show: it reveals only the project address and the start of the public key)
-try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v70`}
+try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v71`}
 catch(e){$("diag").textContent=`Check: the Supabase address is not a valid web address (${JSON.stringify(SUPABASE_URL)}) · app v4`}
 if(SUPABASE_URL.startsWith("YOUR_")){showLogin("Set SUPABASE_URL and SUPABASE_ANON_KEY at the top of index.html.");$("gin").hidden=true}
 else if(!window.supabase){showLogin("Could not load the Supabase library. Check your connection.");$("gin").hidden=true}
@@ -219,7 +219,7 @@ function row(b){const s=b.series_id?esc(S(b.series_id).name):"Standalone";
 const TILE={wishlist:["#A7C7E7","#A7C7E7","#1d2b3f"],tbr:["#f8d4d4","#e08a8a","#3a1a1a"],
   "action/adventure":["#e6b98c","#c48a52","#3a2410"],"childhood books":["#dff0fb","#a5cfe8","#1d3140"],classics:["#d6d6d6","#a0a0a0","#222"],
   "comics/manga":["#d5efd6","#97c99b","#1c3320"],fantasy:["#cdbcee","#8a68c9","#2d2142"],horror:["#111","#111","#f2f2f2"],
-  "murder mystery":["#8e1b1b","#8e1b1b","#fbeaea"],romantasy:["#f7d3e1","#e29ab9","#42202f"],"sci-fi":["#fbefb8","#dcc766","#3a3210"],"safe for mjg":["#fbdcb8","#ee9f55","#3a2410"],"books read mfg":["#DCCEF3","#A88FD6","#2d2142"],"books read mjg":["#F6CADF","#DC8FB8","#42202f"]};
+  "murder mystery":["#8e1b1b","#8e1b1b","#fbeaea"],romantasy:["#f7d3e1","#e29ab9","#42202f"],"sci-fi":["#fbefb8","#dcc766","#3a3210"],"safe for mjg":["#F6CADF","#DC8FB8","#42202f"],"books read mfg":["#BDE6E0","#5FB3AA","#123a36"],"books read mjg":["#fbdcb8","#ee9f55","#3a2410"]};
 const ALIAS={"action & adventure":"action/adventure","action and adventure":"action/adventure","action adventure":"action/adventure","childhood":"childhood books","comics":"comics/manga","manga":"comics/manga","comics & manga":"comics/manga","murder mysteries":"murder mystery","mystery":"murder mystery","sci fi":"sci-fi","scifi":"sci-fi","science fiction":"sci-fi","sf":"sci-fi","classic":"classics"};
 function tileColor(name){const k=String(name).trim().toLowerCase(),c=TILE[ALIAS[k]||k];return c?` c" style="--tb:${c[0]};--tr:${c[1]};--tc:${c[2]}`:""}
 const obar=(o,n)=>`<span class="pb ob" role="progressbar" aria-valuemin="0" aria-valuemax="${n}" aria-valuenow="${o}" aria-label="${o} of ${n} books owned" title="${o} of ${n} books owned"><i style="width:${n?Math.round(100*o/n):0}%"></i></span>`;
@@ -884,7 +884,7 @@ function gTile(k,g){
     :s.t!=null
     ?`<span class="m">${s.n} ${s.n==1?c.noun:c.nouns}</span><span class="m">${s.o} owned${s.w?` · ${s.w} wishlist`:""}</span><span class="m">Pokédex: ${s.u} / ${s.t}</span>`
     :`<span class="m">${s.n} ${s.n==1?c.noun:c.nouns}</span><span class="m">${s.o} owned</span>${s.w?`<span class="m">${s.w} wishlist</span>`:""}`;
-  return`<button class="gt${cls}" data-cg="${esc(g.key)}" style="border-left-color:hsl(${hue(g.label)} 45% 45%)"><span class="gn">${esc(g.label)}</span>${lines}<span class="pb${k=="movies"?"":" ob"}" role="progressbar" aria-valuemin="0" aria-valuemax="${bar[1]}" aria-valuenow="${bar[0]}"><i style="width:${bar[1]?Math.round(100*bar[0]/bar[1]):0}%"></i></span></button>`;
+  return`<button class="gt${cls}" data-cg="${esc(g.key)}" style="border-left-color:${k=="funko"?c.color:`hsl(${hue(g.label)} 45% 45%)`}"><span class="gn">${esc(g.label)}</span>${lines}<span class="pb${k=="movies"?"":" ob"}" role="progressbar" aria-valuemin="0" aria-valuemax="${bar[1]}" aria-valuenow="${bar[0]}"><i style="width:${bar[1]?Math.round(100*bar[0]/bar[1]):0}%"></i></span></button>`;
 }
 /* ----- collection pages ----- */
 function renderCol(){
@@ -909,7 +909,7 @@ function wviewBtn(k){return`<button data-cn="cwv">${cwv(k)=="groups"?"Switch to 
 function renderWishTiles(k){
   const c=CFG[k],wl=listOf(k,"__wishlist");
   const gs=groupsOf(k).map(g=>({...g,items:g.items.filter(wl.test)})).filter(g=>g.items.length);
-  const tiles=gs.map(g=>`<button class="gt" data-cg="__wl:${esc(g.key)}" style="border-left-color:hsl(${hue(g.label)} 45% 45%)"><span class="gn">${esc(g.label)}</span><span class="m">${g.items.length} ${g.items.length==1?c.noun:c.nouns}</span></button>`).join("");
+  const tiles=gs.map(g=>`<button class="gt" data-cg="__wl:${esc(g.key)}" style="border-left-color:${k=="funko"?c.color:`hsl(${hue(g.label)} 45% 45%)`}"><span class="gn">${esc(g.label)}</span><span class="m">${g.items.length} ${g.items.length==1?c.noun:c.nouns}</span></button>`).join("");
   $("cview").innerHTML=`<div class="bar"><button data-cn="home">← ${esc(c.title)}</button><button data-cn="add">+ Add ${esc(c.noun)}</button></div><div class="bar" style="align-items:center;margin-top:6px"><h2 style="margin:0">Wishlist</h2>${wviewBtn(k)}${wl.clear?`<button data-cn="clrw">${wl.clear.label}</button>`:""}</div><div class="gg">${tiles||'<p class="m">Your wishlist is empty.</p>'}</div>`;
 }
 function renderMovieType(k,tk){
