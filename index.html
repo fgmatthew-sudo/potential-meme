@@ -105,7 +105,7 @@ async function onSession(s){
   loadCols();history.replaceState({v:"land"},"");showLand(false);
 }
 // Diagnostic line (safe to show: it reveals only the project address and the start of the public key)
-try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v84`}
+try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v86`}
 catch(e){$("diag").textContent=`Check: the Supabase address is not a valid web address (${JSON.stringify(SUPABASE_URL)}) · app v4`}
 if(SUPABASE_URL.startsWith("YOUR_")){showLogin("Set SUPABASE_URL and SUPABASE_ANON_KEY at the top of index.html.");$("gin").hidden=true}
 else if(!window.supabase){showLogin("Could not load the Supabase library. Check your connection.");$("gin").hidden=true}
@@ -1325,7 +1325,7 @@ function fillLocations(){
   const ls=TV.loc.filter(l=>(!q||[l.name,l.country,l.notes].join(" ").toLowerCase().includes(q))&&(!TQ.st||l.status==TQ.st)).sort((a,b)=>ord.indexOf(a.status)-ord.indexOf(b.status)||String(a.name).localeCompare(b.name));
   // one card per country; the specific locations sit inside their country's card
   const by=new Map();
-  ls.forEach(l=>{const raw=(l.country||"").trim(),m=raw?matchCountry(raw):null,key=m?cnorm(m):(raw?cnorm(raw):"~"),g=by.get(key)||by.set(key,{name:m||raw||"No country",items:[]}).get(key);g.items.push(l)});
+  ls.forEach(l=>{const raw=(l.country||"").trim(),m=locCountry(l),key=m?cnorm(m):(raw?cnorm(raw):"~"),g=by.get(key)||by.set(key,{name:m||raw||"No country",items:[]}).get(key);g.items.push(l)});
   const cs=[...by.values()].sort((a,b)=>(a.name=="No country")-(b.name=="No country")||a.name.localeCompare(b.name));
   $("tcnt").textContent=`${cs.length} countr${cs.length==1?"y":"ies"} · ${ls.length} location${ls.length==1?"":"s"}`;
   if(document.querySelector("svg.wm"))markMap();
@@ -1333,7 +1333,7 @@ function fillLocations(){
     const P=c.items.flatMap(l=>plOf(l.location_id)),dn=P.filter(p=>p.done).length,vis=c.items.filter(l=>l.status=="visited").length;
     return`<div class="gt tc" style="border-left-color:hsl(${hue(c.name)} 45% 45%)"><span class="gn">${esc(c.name)}</span><span class="m">${c.items.length} location${c.items.length==1?"":"s"} · ${P.length} place${P.length==1?"":"s"}</span>
     <div class="tcl">${c.items.map(l=>{const pl=plOf(l.location_id),sc=pl.filter(p=>p.day).length;return`<button data-tn="open" data-i="${esc(l.location_id)}"><strong>${esc(l.name)}</strong><span class="m">${esc(tstl(l.status))} · ${pl.length} place${pl.length==1?"":"s"}${l.trip_start?" · "+esc(tDate(l,0)):""}</span></button>`}).join("")}</div>
-    ${c.name=="No country"?"":`<button class="tadd" data-tn="addloc" data-c="${esc(c.name)}">+ Add location in ${esc(c.name)}</button>`}</div>`}).join("")||`<p class="m">${TV.loc.length?"No locations match.":"No locations yet. Use “+ Add location” to start planning."}</p>`;
+    <div class="tg">${c.name=="No country"?"":`<button class="tadd" data-tn="addloc" data-c="${esc(c.name)}">+ Add location in ${esc(c.name)}</button>`}<button class="tadd" data-tn="delcountry" data-ids="${esc(c.items.map(l=>l.location_id).join(","))}" data-n="${P.length}">Delete</button></div></div>`}).join("")||`<p class="m">${TV.loc.length?"No locations match.":"No locations yet. Use “+ Add location” to start planning."}</p>`;
 }
 /* ----- one location ----- */
 function renderLocation(L){
@@ -1490,6 +1490,16 @@ function matchCountry(txt){
   if(n.length>=4){const m=[...WM.names.keys()].filter(k=>k.startsWith(n)||(" "+k+" ").includes(" "+n+" "));if(m.length==1)return WM.names.get(m[0])}
   return null;
 }
+const CITIES={"Austria":"vienna,wien,salzburg,innsbruck,graz,hallstatt","France":"paris,nice,lyon,marseille,bordeaux,cannes,strasbourg,toulouse","United Kingdom":"london,edinburgh,manchester,glasgow,liverpool,oxford,cambridge,bath,york,cardiff,belfast,brighton","Italy":"rome,roma,milan,venice,florence,naples,pisa,turin,bologna,verona,amalfi,palermo,sicily,sardinia,lake como","Spain":"madrid,barcelona,seville,valencia,granada,malaga,bilbao,ibiza,mallorca,tenerife","Portugal":"lisbon,porto,algarve,madeira","Germany":"berlin,munich,hamburg,cologne,frankfurt,dresden,stuttgart","Netherlands":"amsterdam,rotterdam,the hague,utrecht","Belgium":"brussels,bruges,antwerp,ghent","Switzerland":"zurich,geneva,bern,lucerne,interlaken,zermatt","Czechia":"prague,brno","Hungary":"budapest","Poland":"warsaw,krakow,gdansk","Greece":"athens,santorini,crete,mykonos,thessaloniki,rhodes,corfu","Turkey":"istanbul,ankara,antalya,cappadocia","Ireland":"dublin,galway,cork","Denmark":"copenhagen","Sweden":"stockholm,gothenburg","Norway":"oslo,bergen,tromso","Finland":"helsinki","Iceland":"reykjavik","Malta":"valletta,sliema,mdina,gozo,st julians,mellieha,marsaxlokk","Croatia":"dubrovnik,split,zagreb,hvar","Slovenia":"ljubljana,bled","Slovakia":"bratislava","Romania":"bucharest","Bulgaria":"sofia","Serbia":"belgrade","Bosnia and Herzegovina":"sarajevo,mostar","Estonia":"tallinn","Latvia":"riga","Lithuania":"vilnius","Russia":"moscow,st petersburg","Ukraine":"kyiv,kiev,lviv","USA":"new york,los angeles,san francisco,chicago,miami,las vegas,boston,washington,seattle,orlando,new orleans,san diego,hawaii,nyc","Canada":"toronto,vancouver,montreal,quebec,banff","Mexico":"mexico city,cancun,tulum","Cuba":"havana","Brazil":"rio de janeiro,sao paulo","Argentina":"buenos aires","Peru":"lima,cusco,machu picchu","Chile":"santiago","Colombia":"bogota,cartagena,medellin","Japan":"tokyo,kyoto,osaka,hiroshima","South Korea":"seoul,busan","China":"beijing,shanghai,hong kong,xian","Thailand":"bangkok,phuket,chiang mai","Vietnam":"hanoi,ho chi minh city,da nang","Singapore":"singapore","Malaysia":"kuala lumpur,penang","Indonesia":"bali,jakarta","Philippines":"manila,cebu","India":"delhi,mumbai,jaipur,agra,goa,kerala","Nepal":"kathmandu","United Arab Emirates":"dubai,abu dhabi","Qatar":"doha","Egypt":"cairo,luxor,giza","Morocco":"marrakech,casablanca,fes","Tunisia":"tunis","South Africa":"cape town,johannesburg","Kenya":"nairobi","Tanzania":"zanzibar,serengeti","Australia":"sydney,melbourne,brisbane,perth","New Zealand":"auckland,queenstown,wellington","Israel":"tel aviv,jerusalem","Jordan":"amman,petra","Georgia":"tbilisi","Armenia":"yerevan","Azerbaijan":"baku","Cyprus":"nicosia,paphos,limassol"};
+const CITY=(()=>{const m={};for(const[c,v]of Object.entries(CITIES))v.split(",").forEach(x=>m[cnorm(x)]=c);return m})();
+const cityToCountry=t=>{const c=CITY[cnorm(t)];return c?matchCountry(c):null};
+const cparts=t=>String(t||"").split(/[,;\/|()\u2013]|\s-\s/).map(x=>x.trim()).filter(Boolean).reverse();
+// the country a location belongs to: its Country box (also "Vienna, Austria" style text or a city name), else the city in its own name
+function locCountry(l){
+  const raw=(l.country||"").trim(),tryAll=t=>matchCountry(t)||cityToCountry(t);
+  if(raw){const m=tryAll(raw)||cparts(raw).map(tryAll).find(Boolean);if(m)return m}
+  return cityToCountry(l.name)||cparts(l.name).map(tryAll).find(Boolean)||null;
+}
 function decodeTopo(topo){
   const [sx,sy]=topo.transform?topo.transform.scale:[1,1],[tx,ty]=topo.transform?topo.transform.translate:[0,0];
   const arcs=topo.arcs.map(a=>{let x=0,y=0;return a.map(([dx,dy])=>{x+=dx;y+=dy;return[x*sx+tx,y*sy+ty]})});
@@ -1559,7 +1569,7 @@ document.addEventListener("pointermove",e=>{const o=MP.get(e.pointerId);if(!o)re
 document.addEventListener("wheel",e=>{const svg=e.target.closest&&e.target.closest("svg.wm");if(!svg||!(e.ctrlKey||e.metaKey))return;e.preventDefault();const[cx,cy]=mzPt(svg,e);mzZoom(e.deltaY<0?1.25:0.8,cx,cy)},{passive:false});
 document.addEventListener("click",e=>{const b=e.target.closest("button[data-mz]");if(!b)return;
   if(b.dataset.mz=="in")mzZoom(1.6);else if(b.dataset.mz=="out")mzZoom(1/1.6);else{MZ.x=0;MZ.y=0;MZ.w=WM.W;MZ.h=WM.H;MZ.z=1;mzApply()}});
-const visitedNames=()=>{const s=new Set(),un=new Set();TV.loc.filter(l=>l.status=="visited"&&l.country).forEach(l=>{const m=matchCountry(l.country);m?s.add(m):un.add(l.country.trim())});return{s,un}};
+const visitedNames=()=>{const s=new Set(),un=new Set();TV.loc.filter(l=>l.status=="visited").forEach(l=>{const m=locCountry(l);if(m)s.add(m);else if(WM.ready||l.country)un.add((l.country||"").trim()?l.country.trim():l.name+" (add its country)")});return{s,un}};
 function drawMap(){
   const box=$("tmap");if(!box)return;
   const {s,un}=visitedNames(),n=s.size||(WM.ready?0:new Set(TV.loc.filter(l=>l.status=="visited"&&l.country).map(l=>cnorm(l.country))).size);
@@ -1575,7 +1585,7 @@ function markMap(){
 }
 document.addEventListener("click",e=>{
   const p=e.target.closest("svg.wm path");if(!p||MZ.drag)return;
-  const name=p.dataset.cn,ls=TV.loc.filter(l=>matchCountry(l.country)==name),info=$("tmapinfo");if(!info)return;
+  const name=p.dataset.cn,ls=TV.loc.filter(l=>locCountry(l)==name),info=$("tmapinfo");if(!info)return;
   info.innerHTML=`<strong>${esc(name)}</strong>${ls.length?" · "+ls.map(l=>`<button data-tn="open" data-i="${esc(l.location_id)}">${esc(l.name)} (${esc(tstl(l.status))})</button>`).join(" "):" · no locations yet"} <button data-tn="addloc" data-c="${esc(name)}">+ Add location here</button>`;
 });
 /* ----- events ----- */
@@ -1587,6 +1597,13 @@ document.addEventListener("click",async e=>{
   else if(n=="back")travelGo(null,"places",true);
   else if(n=="addloc")tform("loc",null,t.dataset.c?{country:t.dataset.c}:null);
   else if(n=="editloc"&&L)tform("loc",L);
+  else if(n=="delcountry"){
+    const ids=(t.dataset.ids||"").split(",").filter(Boolean),np=Number(t.dataset.n)||0;
+    if(!t.dataset.c){t.dataset.c=1;t.textContent=`Confirm delete: ${ids.length} location${ids.length==1?"":"s"}${np?` and ${np} place${np==1?"":"s"}`:""}`;return}
+    const{error}=await sb.from("travel_locations").delete().in("location_id",ids);
+    if(error){msg("Delete failed: "+error.message);return}
+    msg("");TV.loc=TV.loc.filter(l=>!ids.includes(l.location_id));TV.pl=TV.pl.filter(p=>!ids.includes(p.location_id));renderTravel();renderLand();
+  }
   else if(n=="addpl"&&L)tform("pl");
   else if(n=="editpl"&&p)tform("pl",p);
   else if(n=="tab"){tTab=t.dataset.v;tNote="";history.replaceState({v:"t",loc:tLoc,tab:tTab},"");renderTravel()}
