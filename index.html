@@ -105,7 +105,7 @@ async function onSession(s){
   loadCols();history.replaceState({v:"land"},"");showLand(false);
 }
 // Diagnostic line (safe to show: it reveals only the project address and the start of the public key)
-try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v86`}
+try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v88`}
 catch(e){$("diag").textContent=`Check: the Supabase address is not a valid web address (${JSON.stringify(SUPABASE_URL)}) · app v4`}
 if(SUPABASE_URL.startsWith("YOUR_")){showLogin("Set SUPABASE_URL and SUPABASE_ANON_KEY at the top of index.html.");$("gin").hidden=true}
 else if(!window.supabase){showLogin("Could not load the Supabase library. Check your connection.");$("gin").hidden=true}
@@ -1125,7 +1125,7 @@ function cimgDlg(k,o){
   <div class="fm"><label>Paste an image address<input id="xi_u" placeholder="https://…"></label></div><div class="tg"><button id="xi_use">Use address</button></div>
   <div class="fm"><label>Or upload a photo<input type="file" id="xi_f" accept="image/*"></label></div>
   ${pk?`<div class="fm"><label>Search the Pokémon TCG database<input id="xi_q" value="${esc(o.name)}"></label></div><div class="tg"><button id="xi_s">Search cards</button>${o.dex_number?'<button id="xi_art">Use official artwork</button>':""}</div>`
-      :`<p class="m" style="margin-top:10px"><a target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent(c.imgQ(o))}">${c.imgLabel} ↗</a> — then copy the image address and paste it above.</p>`}
+      :(k=="movies"?`<div class="fm"><label>Find poster suggestions<input id="xi_q" value="${esc(o.name)}"></label></div><div class="tg"><button id="xi_s">Search posters</button></div>`:"")+`<p class="m" style="margin-top:10px"><a target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent(c.imgQ(o))}">${c.imgLabel} ↗</a> — then copy the image address and paste it above.</p>`}
   <div class="cg" id="xi_r"></div><p class="m" id="xi_n" role="status"></p>
   <div class="tg"><button id="xi_rm">${pk?"Remove all images":"Remove image"}</button><button id="xi_x">Close</button></div>`;
   d.showModal();
@@ -1142,6 +1142,36 @@ function cimgDlg(k,o){
   $("xi_use").onclick=()=>{const u=$("xi_u").value.trim();if(!/^https:\/\/\S+$/i.test(u)){say("Enter an address starting with https://");return}(pk?addImg(u):save({image_url:u}))};
   $("xi_rm").onclick=()=>save(pk?mk([]):{image_url:null});
   $("xi_f").onchange=async e=>{const f=e.target.files[0];if(!f)return;say("Preparing photo…");try{const u=await shrink(f,420);pk?addImg(u):save({image_url:u});e.target.value=""}catch(err){say(err.message)}};
+  if(k=="movies"){
+    const kind=()=>{const t=($("xi_t")&&$("xi_t").value)||o.media_type;return t};
+    const norm=(u)=>u?String(u).replace(/^http:/,"https:"):"";
+    const find=async q=>{
+      const t=o.media_type;
+      if(t=="Anime"){
+        const r=await fetch("https://api.jikan.moe/v4/anime?limit=24&q="+encodeURIComponent(q));if(!r.ok)throw new Error("The anime database answered "+r.status);
+        return((await r.json()).data||[]).map(x=>({img:x.images&&x.images.jpg&&(x.images.jpg.large_image_url||x.images.jpg.image_url),thumb:x.images&&x.images.jpg&&(x.images.jpg.image_url||x.images.jpg.large_image_url),label:(x.title_english||x.title||"")+(x.year?" ("+x.year+")":"")}));
+      }
+      if(t=="Series"){
+        const r=await fetch("https://api.tvmaze.com/search/shows?q="+encodeURIComponent(q));if(!r.ok)throw new Error("The TV database answered "+r.status);
+        return(await r.json()).slice(0,24).map(z=>z.show).map(x=>({img:norm(x.image&&(x.image.original||x.image.medium)),thumb:norm(x.image&&(x.image.medium||x.image.original)),label:(x.name||"")+(x.premiered?" ("+x.premiered.slice(0,4)+")":"")}));
+      }
+      const r=await fetch("https://itunes.apple.com/search?media=movie&entity=movie&limit=24&term="+encodeURIComponent(q));if(!r.ok)throw new Error("The movie database answered "+r.status);
+      return((await r.json()).results||[]).map(x=>({img:(x.artworkUrl100||"").replace(/\/\d+x\d+bb\./,"/600x900bb."),thumb:x.artworkUrl100||"",label:(x.trackName||"")+(x.releaseDate?" ("+x.releaseDate.slice(0,4)+")":"")}));
+    };
+    const search=async()=>{
+      const q=$("xi_q").value.trim();if(!q){say("Enter a title to search for.");return}
+      say("Searching…");$("xi_r").innerHTML="";
+      try{
+        found=(await find(q)).filter(x=>x.img);
+        if(!found.length){say("No posters found. Try a shorter title, or paste an address or upload a photo.");return}
+        say("Tap a poster to use it.");
+        $("xi_r").innerHTML=found.map((x,i)=>`<button class="ci" data-xr="${i}"><img src="${esc(x.thumb||x.img)}" alt="${esc(x.label)}" loading="lazy" referrerpolicy="no-referrer"><span>${esc(x.label)}</span></button>`).join("");
+      }catch(err){say("Search failed: "+err.message+". You can still paste an address or upload a photo.")}
+    };
+    $("xi_s").onclick=search;$("xi_q").onkeydown=e=>{if(e.key=="Enter")search()};
+    $("xi_r").onclick=e=>{const b=e.target.closest("[data-xr]");if(!b)return;const x=found[+b.dataset.xr];if(x&&x.img)save({image_url:x.img})};
+    search();
+  }
   if(pk){
     if($("xi_art"))$("xi_art").onclick=()=>addImg(`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${o.dex_number}.png`);
     const search=async()=>{
@@ -1277,7 +1307,7 @@ document.addEventListener("input",e=>{
 });
 
 /* ---------- travel locations ---------- */
-const TV={loc:[],pl:[],err:null};
+const TV={loc:[],pl:[],cty:[],ctyErr:null,err:null};
 let tLoc=null,tTab="places",tNote="",TFH=false,TCAP=8;
 const TQ={q:"",st:"",cat:"",area:"",show:""};
 try{TFH=localStorage.getItem("tfh")==="1";TCAP=Number(localStorage.getItem("tcap"))||8}catch(e){}
@@ -1295,6 +1325,7 @@ const dayItems=(L,d)=>plOf(L.location_id).filter(p=>p.day==d).sort((a,b)=>(a.day
 async function loadTravel(){
   const a=await fetchAll("travel_locations","location_id"),b=a.error?a:await fetchAll("travel_places","place_id");
   if(a.error||b.error){TV.err=(a.error||b.error).message;TV.loc=[];TV.pl=[]}else{TV.err=null;TV.loc=a.data;TV.pl=b.data}
+  const c=await fetchAll("travel_countries","country_id");TV.cty=c.error?[]:c.data;TV.ctyErr=c.error?c.error.message:null;
   renderLand();if(!$("tview").hidden)renderTravel();
 }
 function tLandTile(){
@@ -1315,7 +1346,7 @@ function renderTravel(){
 }
 /* ----- list of locations ----- */
 function renderLocations(){
-  $("tview").innerHTML=`<div class="bar"><button data-tn="land">← Collections</button><button data-tn="addloc">+ Add location</button><button data-tn="ftog">${TFH?"Show filters":"Hide filters"}</button></div>
+  $("tview").innerHTML=`<div class="bar"><button data-tn="land">← Collections</button><button data-tn="addcty">+ Add country</button><button data-tn="ftog">${TFH?"Show filters":"Hide filters"}</button></div>
   <div class="bar"${TFH?" hidden":""}><input type="search" id="tq" placeholder="Search locations" aria-label="Search" value="${esc(TQ.q)}"><select id="tst" aria-label="Status"><option value="">Status: any</option>${TST.map(([v,l])=>`<option value="${v}"${TQ.st==v?" selected":""}>${l}</option>`).join("")}</select></div>
   <div id="tmap"></div><div class="cnt" id="tcnt"></div><div class="gg" id="tres"></div>`;
   fillLocations();drawMap();
@@ -1323,17 +1354,34 @@ function renderLocations(){
 function fillLocations(){
   const q=TQ.q.trim().toLowerCase(),ord=["planned","wishlist","visited"];
   const ls=TV.loc.filter(l=>(!q||[l.name,l.country,l.notes].join(" ").toLowerCase().includes(q))&&(!TQ.st||l.status==TQ.st)).sort((a,b)=>ord.indexOf(a.status)-ord.indexOf(b.status)||String(a.name).localeCompare(b.name));
-  // one card per country; the specific locations sit inside their country's card
-  const by=new Map();
-  ls.forEach(l=>{const raw=(l.country||"").trim(),m=locCountry(l),key=m?cnorm(m):(raw?cnorm(raw):"~"),g=by.get(key)||by.set(key,{name:m||raw||"No country",items:[]}).get(key);g.items.push(l)});
+  // one card per country (England, Scotland, Wales and Northern Ireland are separate); its specific locations sit inside the card
+  const by=new Map(),grp=(name)=>{const key=name=="No country"?"~":cnorm(name);return by.get(key)||by.set(key,{name,items:[],cids:[]}).get(key)};
+  ls.forEach(l=>{const raw=(l.country||"").trim();grp(cardOf(l)||raw||"No country").items.push(l)});
+  TV.cty.forEach(r=>{const nm=cardOfName(r.name);if(!nm)return;if(TQ.st)return;if(q&&!nm.toLowerCase().includes(q)&&!by.has(cnorm(nm)))return;grp(nm).cids.push(r.country_id)});
   const cs=[...by.values()].sort((a,b)=>(a.name=="No country")-(b.name=="No country")||a.name.localeCompare(b.name));
   $("tcnt").textContent=`${cs.length} countr${cs.length==1?"y":"ies"} · ${ls.length} location${ls.length==1?"":"s"}`;
   if(document.querySelector("svg.wm"))markMap();
   $("tres").innerHTML=cs.map(c=>{
-    const P=c.items.flatMap(l=>plOf(l.location_id)),dn=P.filter(p=>p.done).length,vis=c.items.filter(l=>l.status=="visited").length;
-    return`<div class="gt tc" style="border-left-color:hsl(${hue(c.name)} 45% 45%)"><span class="gn">${esc(c.name)}</span><span class="m">${c.items.length} location${c.items.length==1?"":"s"} · ${P.length} place${P.length==1?"":"s"}</span>
-    <div class="tcl">${c.items.map(l=>{const pl=plOf(l.location_id),sc=pl.filter(p=>p.day).length;return`<button data-tn="open" data-i="${esc(l.location_id)}"><strong>${esc(l.name)}</strong><span class="m">${esc(tstl(l.status))} · ${pl.length} place${pl.length==1?"":"s"}${l.trip_start?" · "+esc(tDate(l,0)):""}</span></button>`}).join("")}</div>
-    <div class="tg">${c.name=="No country"?"":`<button class="tadd" data-tn="addloc" data-c="${esc(c.name)}">+ Add location in ${esc(c.name)}</button>`}<button class="tadd" data-tn="delcountry" data-ids="${esc(c.items.map(l=>l.location_id).join(","))}" data-n="${P.length}">Delete</button></div></div>`}).join("")||`<p class="m">${TV.loc.length?"No locations match.":"No locations yet. Use “+ Add location” to start planning."}</p>`;
+    const P=c.items.flatMap(l=>plOf(l.location_id));
+    return`<div class="gt tc" style="border-left-color:hsl(${hue(c.name)} 45% 45%)"><span class="gn">${esc(c.name)}</span><span class="m">${c.items.length?`${c.items.length} location${c.items.length==1?"":"s"} · ${P.length} place${P.length==1?"":"s"}`:"No locations yet"}</span>
+    <div class="tcl">${c.items.map(l=>{const pl=plOf(l.location_id);return`<button data-tn="open" data-i="${esc(l.location_id)}"><strong>${esc(l.name)}</strong><span class="m">${esc(tstl(l.status))} · ${pl.length} place${pl.length==1?"":"s"}${l.trip_start?" · "+esc(tDate(l,0)):""}</span></button>`}).join("")}</div>
+    <div class="tg">${c.name=="No country"?"":`<button class="tadd" data-tn="addloc" data-c="${esc(c.name)}">+ Add location in ${esc(c.name)}</button>`}<button class="tadd" data-tn="delcountry" data-ids="${esc(c.items.map(l=>l.location_id).join(","))}" data-cids="${esc(c.cids.join(","))}" data-n="${P.length}">Delete</button></div></div>`}).join("")||`<p class="m">${TV.loc.length||TV.cty.length?"No countries match.":"No countries yet. Use “+ Add country” to start planning."}</p>`;
+}
+const tCountryNames=()=>[...new Set([...WM.paths.map(p=>p.name),"England","Scotland","Wales","Northern Ireland"])].sort();
+function ctyForm(){
+  const d=$("tdlg");
+  d.innerHTML=`<h2 style="margin-top:0">Add country</h2><div class="fm"><label>Country *<input id="tc_name" list="tdl_c2" autocomplete="off" placeholder="e.g. Italy, England"></label></div><datalist id="tdl_c2">${tCountryNames().map(n=>`<option value="${esc(n)}">`).join("")}</datalist><p id="tfe" class="m err" role="alert"></p><div class="tg"><button type="button" id="tsv">Add</button><button type="button" id="tcx">Cancel</button></div>`;
+  d.showModal();$("tcx").onclick=()=>d.close();
+  $("tsv").onclick=async()=>{
+    const raw=$("tc_name").value.trim();if(!raw){$("tfe").textContent="Enter a country";return}
+    const name=cardOfName(raw);
+    if(TV.ctyErr){$("tfe").textContent="To save a country on its own, run add-travel-countries.sql in Supabase first. (Adding a location inside a country works without it.)";return}
+    if(TV.cty.some(r=>cnorm(cardOfName(r.name))==cnorm(name))||TV.loc.some(l=>cnorm(cardOf(l)||"")==cnorm(name))){$("tfe").textContent=name+" is already on the list";return}
+    $("tsv").disabled=true;
+    const{data,error}=await sb.from("travel_countries").insert({name}).select().single();
+    if(error){$("tfe").textContent="Could not save: "+error.message;$("tsv").disabled=false;return}
+    TV.cty.push(data);d.close();renderTravel();
+  };
 }
 /* ----- one location ----- */
 function renderLocation(L){
@@ -1448,7 +1496,7 @@ function tform(kind,o,pre){
     :t=="area"?`<label>${l}<textarea id="tf_${k}">${esc(o[k])}</textarea></label>`
     :`<label>${l}<input id="tf_${k}" type="${t}"${t=="number"?' step="any" min="0"':""} value="${esc(o[k]??"")}"${k=="area"?' list="tdl_a"':k=="country"?' list="tdl_c"':""}></label>`;
   const areas=isL?[]:[...new Set(plOf(tLoc).map(p=>p.area).filter(Boolean))];
-  d.innerHTML=`<h2 style="margin-top:0">${ed?"Edit":"Add"} ${isL?"location":"place"}</h2><div class="fm">${F.map(f).join("")}</div>${isL?`<datalist id="tdl_c">${WM.paths.map(p=>`<option value="${esc(p.name)}">`).join("")}</datalist>`:`<datalist id="tdl_a">${areas.map(a=>`<option value="${esc(a)}">`).join("")}</datalist>`}<p id="tfe" class="m err" role="alert"></p><div class="tg"><button type="button" id="tsv">Save</button>${ed?'<button type="button" id="tdel">Delete</button>':""}<button type="button" id="tcx">Cancel</button></div>`;
+  d.innerHTML=`<h2 style="margin-top:0">${ed?"Edit":"Add"} ${isL?"location":"place"}</h2><div class="fm">${F.map(f).join("")}</div>${isL?`<datalist id="tdl_c">${tCountryNames().map(n=>`<option value="${esc(n)}">`).join("")}</datalist>`:`<datalist id="tdl_a">${areas.map(a=>`<option value="${esc(a)}">`).join("")}</datalist>`}<p id="tfe" class="m err" role="alert"></p><div class="tg"><button type="button" id="tsv">Save</button>${ed?'<button type="button" id="tdel">Delete</button>':""}<button type="button" id="tcx">Cancel</button></div>`;
   d.showModal();$("tcx").onclick=()=>d.close();
   if(ed)$("tdel").onclick=async function(){
     if(!this.dataset.c){this.dataset.c=1;this.textContent=isL?"Confirm delete (removes its places)":"Confirm delete?";return}
@@ -1490,11 +1538,20 @@ function matchCountry(txt){
   if(n.length>=4){const m=[...WM.names.keys()].filter(k=>k.startsWith(n)||(" "+k+" ").includes(" "+n+" "));if(m.length==1)return WM.names.get(m[0])}
   return null;
 }
-const CITIES={"Austria":"vienna,wien,salzburg,innsbruck,graz,hallstatt","France":"paris,nice,lyon,marseille,bordeaux,cannes,strasbourg,toulouse","United Kingdom":"london,edinburgh,manchester,glasgow,liverpool,oxford,cambridge,bath,york,cardiff,belfast,brighton","Italy":"rome,roma,milan,venice,florence,naples,pisa,turin,bologna,verona,amalfi,palermo,sicily,sardinia,lake como","Spain":"madrid,barcelona,seville,valencia,granada,malaga,bilbao,ibiza,mallorca,tenerife","Portugal":"lisbon,porto,algarve,madeira","Germany":"berlin,munich,hamburg,cologne,frankfurt,dresden,stuttgart","Netherlands":"amsterdam,rotterdam,the hague,utrecht","Belgium":"brussels,bruges,antwerp,ghent","Switzerland":"zurich,geneva,bern,lucerne,interlaken,zermatt","Czechia":"prague,brno","Hungary":"budapest","Poland":"warsaw,krakow,gdansk","Greece":"athens,santorini,crete,mykonos,thessaloniki,rhodes,corfu","Turkey":"istanbul,ankara,antalya,cappadocia","Ireland":"dublin,galway,cork","Denmark":"copenhagen","Sweden":"stockholm,gothenburg","Norway":"oslo,bergen,tromso","Finland":"helsinki","Iceland":"reykjavik","Malta":"valletta,sliema,mdina,gozo,st julians,mellieha,marsaxlokk","Croatia":"dubrovnik,split,zagreb,hvar","Slovenia":"ljubljana,bled","Slovakia":"bratislava","Romania":"bucharest","Bulgaria":"sofia","Serbia":"belgrade","Bosnia and Herzegovina":"sarajevo,mostar","Estonia":"tallinn","Latvia":"riga","Lithuania":"vilnius","Russia":"moscow,st petersburg","Ukraine":"kyiv,kiev,lviv","USA":"new york,los angeles,san francisco,chicago,miami,las vegas,boston,washington,seattle,orlando,new orleans,san diego,hawaii,nyc","Canada":"toronto,vancouver,montreal,quebec,banff","Mexico":"mexico city,cancun,tulum","Cuba":"havana","Brazil":"rio de janeiro,sao paulo","Argentina":"buenos aires","Peru":"lima,cusco,machu picchu","Chile":"santiago","Colombia":"bogota,cartagena,medellin","Japan":"tokyo,kyoto,osaka,hiroshima","South Korea":"seoul,busan","China":"beijing,shanghai,hong kong,xian","Thailand":"bangkok,phuket,chiang mai","Vietnam":"hanoi,ho chi minh city,da nang","Singapore":"singapore","Malaysia":"kuala lumpur,penang","Indonesia":"bali,jakarta","Philippines":"manila,cebu","India":"delhi,mumbai,jaipur,agra,goa,kerala","Nepal":"kathmandu","United Arab Emirates":"dubai,abu dhabi","Qatar":"doha","Egypt":"cairo,luxor,giza","Morocco":"marrakech,casablanca,fes","Tunisia":"tunis","South Africa":"cape town,johannesburg","Kenya":"nairobi","Tanzania":"zanzibar,serengeti","Australia":"sydney,melbourne,brisbane,perth","New Zealand":"auckland,queenstown,wellington","Israel":"tel aviv,jerusalem","Jordan":"amman,petra","Georgia":"tbilisi","Armenia":"yerevan","Azerbaijan":"baku","Cyprus":"nicosia,paphos,limassol"};
+const CITIES={"Austria":"vienna,wien,salzburg,innsbruck,graz,hallstatt","France":"paris,nice,lyon,marseille,bordeaux,cannes,strasbourg,toulouse","England":"london,manchester,liverpool,oxford,cambridge,bath,york,brighton,birmingham,bristol,cornwall","Scotland":"edinburgh,glasgow,aberdeen,inverness,skye","Wales":"cardiff,swansea,snowdonia","Northern Ireland":"belfast,derry,giants causeway","Italy":"rome,roma,milan,venice,florence,naples,pisa,turin,bologna,verona,amalfi,palermo,sicily,sardinia,lake como","Spain":"madrid,barcelona,seville,valencia,granada,malaga,bilbao,ibiza,mallorca,tenerife","Portugal":"lisbon,porto,algarve,madeira","Germany":"berlin,munich,hamburg,cologne,frankfurt,dresden,stuttgart","Netherlands":"amsterdam,rotterdam,the hague,utrecht","Belgium":"brussels,bruges,antwerp,ghent","Switzerland":"zurich,geneva,bern,lucerne,interlaken,zermatt","Czechia":"prague,brno","Hungary":"budapest","Poland":"warsaw,krakow,gdansk","Greece":"athens,santorini,crete,mykonos,thessaloniki,rhodes,corfu","Turkey":"istanbul,ankara,antalya,cappadocia","Ireland":"dublin,galway,cork","Denmark":"copenhagen","Sweden":"stockholm,gothenburg","Norway":"oslo,bergen,tromso","Finland":"helsinki","Iceland":"reykjavik","Malta":"valletta,sliema,mdina,gozo,st julians,mellieha,marsaxlokk","Croatia":"dubrovnik,split,zagreb,hvar","Slovenia":"ljubljana,bled","Slovakia":"bratislava","Romania":"bucharest","Bulgaria":"sofia","Serbia":"belgrade","Bosnia and Herzegovina":"sarajevo,mostar","Estonia":"tallinn","Latvia":"riga","Lithuania":"vilnius","Russia":"moscow,st petersburg","Ukraine":"kyiv,kiev,lviv","USA":"new york,los angeles,san francisco,chicago,miami,las vegas,boston,washington,seattle,orlando,new orleans,san diego,hawaii,nyc","Canada":"toronto,vancouver,montreal,quebec,banff","Mexico":"mexico city,cancun,tulum","Cuba":"havana","Brazil":"rio de janeiro,sao paulo","Argentina":"buenos aires","Peru":"lima,cusco,machu picchu","Chile":"santiago","Colombia":"bogota,cartagena,medellin","Japan":"tokyo,kyoto,osaka,hiroshima","South Korea":"seoul,busan","China":"beijing,shanghai,hong kong,xian","Thailand":"bangkok,phuket,chiang mai","Vietnam":"hanoi,ho chi minh city,da nang","Singapore":"singapore","Malaysia":"kuala lumpur,penang","Indonesia":"bali,jakarta","Philippines":"manila,cebu","India":"delhi,mumbai,jaipur,agra,goa,kerala","Nepal":"kathmandu","United Arab Emirates":"dubai,abu dhabi","Qatar":"doha","Egypt":"cairo,luxor,giza","Morocco":"marrakech,casablanca,fes","Tunisia":"tunis","South Africa":"cape town,johannesburg","Kenya":"nairobi","Tanzania":"zanzibar,serengeti","Australia":"sydney,melbourne,brisbane,perth","New Zealand":"auckland,queenstown,wellington","Israel":"tel aviv,jerusalem","Jordan":"amman,petra","Georgia":"tbilisi","Armenia":"yerevan","Azerbaijan":"baku","Cyprus":"nicosia,paphos,limassol"};
 const CITY=(()=>{const m={};for(const[c,v]of Object.entries(CITIES))v.split(",").forEach(x=>m[cnorm(x)]=c);return m})();
-const cityToCountry=t=>{const c=CITY[cnorm(t)];return c?matchCountry(c):null};
+const NAT={england:"England",scotland:"Scotland",wales:"Wales","northern ireland":"Northern Ireland"};
+const natOf=t=>{const n=cnorm(t);return NAT[n]||NAT[cnorm(CITY[n]||"")]||null};
+const cityToCountry=t=>{const c=CITY[cnorm(t)];return c?(NAT[cnorm(c)]?matchCountry("United Kingdom"):matchCountry(c)):null};
 const cparts=t=>String(t||"").split(/[,;\/|()\u2013]|\s-\s/).map(x=>x.trim()).filter(Boolean).reverse();
 // the country a location belongs to: its Country box (also "Vienna, Austria" style text or a city name), else the city in its own name
+// the card a location belongs to: like locCountry, but England, Scotland, Wales and Northern Ireland get their own cards
+function cardOf(l){
+  const c=locCountry(l);if(c&&c!="United Kingdom")return c;
+  for(const t of [l.country,...cparts(l.country),l.name,...cparts(l.name)]){const nn=natOf(t);if(nn)return nn}
+  return c;
+}
+const cardOfName=n=>{const t=String(n||"").trim();return natOf(t)||matchCountry(t)||(CITY[cnorm(t)]?cityToCountry(t):null)||t};
 function locCountry(l){
   const raw=(l.country||"").trim(),tryAll=t=>matchCountry(t)||cityToCountry(t);
   if(raw){const m=tryAll(raw)||cparts(raw).map(tryAll).find(Boolean);if(m)return m}
@@ -1595,14 +1652,17 @@ document.addEventListener("click",async e=>{
   if(n=="land"){showLand(true)}
   else if(n=="open")travelGo(t.dataset.i,"places",true);
   else if(n=="back")travelGo(null,"places",true);
+  else if(n=="addcty")ctyForm();
   else if(n=="addloc")tform("loc",null,t.dataset.c?{country:t.dataset.c}:null);
   else if(n=="editloc"&&L)tform("loc",L);
   else if(n=="delcountry"){
-    const ids=(t.dataset.ids||"").split(",").filter(Boolean),np=Number(t.dataset.n)||0;
-    if(!t.dataset.c){t.dataset.c=1;t.textContent=`Confirm delete: ${ids.length} location${ids.length==1?"":"s"}${np?` and ${np} place${np==1?"":"s"}`:""}`;return}
-    const{error}=await sb.from("travel_locations").delete().in("location_id",ids);
-    if(error){msg("Delete failed: "+error.message);return}
-    msg("");TV.loc=TV.loc.filter(l=>!ids.includes(l.location_id));TV.pl=TV.pl.filter(p=>!ids.includes(p.location_id));renderTravel();renderLand();
+    const ids=(t.dataset.ids||"").split(",").filter(Boolean),cids=(t.dataset.cids||"").split(",").filter(Boolean),np=Number(t.dataset.n)||0;
+    if(!t.dataset.c){t.dataset.c=1;t.textContent=ids.length?`Confirm delete: ${ids.length} location${ids.length==1?"":"s"}${np?` and ${np} place${np==1?"":"s"}`:""}`:"Confirm delete";return}
+    let er=null;
+    if(ids.length)er=(await sb.from("travel_locations").delete().in("location_id",ids)).error;
+    if(!er&&cids.length)er=(await sb.from("travel_countries").delete().in("country_id",cids)).error;
+    if(er){msg("Delete failed: "+er.message);return}
+    msg("");TV.cty=TV.cty.filter(r=>!cids.includes(r.country_id));TV.loc=TV.loc.filter(l=>!ids.includes(l.location_id));TV.pl=TV.pl.filter(p=>!ids.includes(p.location_id));renderTravel();renderLand();
   }
   else if(n=="addpl"&&L)tform("pl");
   else if(n=="editpl"&&p)tform("pl",p);
