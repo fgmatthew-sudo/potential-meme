@@ -78,7 +78,7 @@ textarea{width:100%;min-height:70px}
 </div>
 </div>
 
-<dialog id="dlg"></dialog><dialog id="tdlg"></dialog><dialog id="fd"></dialog><dialog id="im"></dialog><dialog id="cvd"></dialog><dialog id="xd"></dialog><dialog id="xf"></dialog><dialog id="xi"></dialog><dialog id="xm"></dialog>
+<dialog id="dlg"></dialog><dialog id="bn"></dialog><dialog id="tdlg"></dialog><dialog id="fd"></dialog><dialog id="im"></dialog><dialog id="cvd"></dialog><dialog id="xd"></dialog><dialog id="xf"></dialog><dialog id="xi"></dialog><dialog id="xm"></dialog>
 <datalist id="dl_a"></datalist><datalist id="dl_g"></datalist><datalist id="dl_s"></datalist>
 
 <script>
@@ -105,7 +105,7 @@ async function onSession(s){
   loadCols();history.replaceState({v:"land"},"");showLand(false);
 }
 // Diagnostic line (safe to show: it reveals only the project address and the start of the public key)
-try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v88`}
+try{const h=new URL(SUPABASE_URL);$("diag").textContent=`Check: address=${h.origin}${h.pathname!=="/"?h.pathname:""} · key starts "${SUPABASE_ANON_KEY.slice(0,14)}" (${SUPABASE_ANON_KEY.length} characters) · app v89`}
 catch(e){$("diag").textContent=`Check: the Supabase address is not a valid web address (${JSON.stringify(SUPABASE_URL)}) · app v4`}
 if(SUPABASE_URL.startsWith("YOUR_")){showLogin("Set SUPABASE_URL and SUPABASE_ANON_KEY at the top of index.html.");$("gin").hidden=true}
 else if(!window.supabase){showLogin("Could not load the Supabase library. Check your connection.");$("gin").hidden=true}
@@ -145,7 +145,7 @@ async function load(){
   const keys={authors:"author_id",genres:"genre_id",series:"series_id",books:"book_id",book_covers:"cover_id"};
   const r=await Promise.all(Object.keys(keys).map(t=>fetchAll(t,keys[t])));
   const e=r.find(x=>x.error);if(e){msg("Load failed: "+e.error.message);return}
-  [authors,genres,series,books,covers]=r.map(x=>x.data);msg("");fill();render();loadBingo();
+  [authors,genres,series,books,covers]=r.map(x=>x.data);msg("");fill();render();loadBingo();loadBN();
   // owned books cannot be on the Wishlist or Safe for MJG lists: tidy up any that already are
   books.filter(b=>b.owned&&(b.wishlist||b.safe_mjg)).forEach(b=>{upd(b,{wishlist:false,safe_mjg:false}).then(render)});
 }
@@ -230,13 +230,45 @@ function renderHome(){
   const gl=genres.filter(g=>by[g.genre_id]).sort((x,y)=>x.name.localeCompare(y.name));
   const tile=(id,name,n,r,h,o,d,j)=>`<button class="gt${tileColor(name)||(id===""?`" style="border-left-color:var(--card)`:`" style="border-left-color:hsl(${h} 45% 45%)`)}" data-genre="${esc(id)}"><span class="gn">${esc(name)}</span><span class="m">${n} book${n==1?"":"s"}</span><span class="m">${o} owned</span><span class="m">${r} read MFG</span><span class="m">${j} read MJG</span>${obar(o,n)}${pbar(d,o)}</button>`;
   const sp=(id,name,n,h)=>`<button class="gt${tileColor(name)}" data-genre="${id}"><span class="gn">${name}</span><span class="m">${n} book${n==1?"":"s"}</span></button>`;
-  $("lists").innerHTML=sp("__wishlist","Wishlist",books.filter(b=>b.wishlist&&!b.owned).length,340)+sp("__tbr","TBR",books.filter(b=>b.tbr).length,200)+sp("__readmfg","Books Read MFG",books.filter(b=>b.read).length,270)+sp("__readmjg","Books Read MJG",books.filter(b=>b.read_mjg).length,320)+sp("__mjg","Safe for MJG",books.filter(b=>b.safe_mjg&&!b.owned).length,30);
+  $("lists").innerHTML=sp("__wishlist","Wishlist",books.filter(b=>b.wishlist&&!b.owned).length,340)+`<button class="gt" data-bn="1"><span class="gn">Books to be added</span><span class="m">${BN.err?"Not set up yet":BN.rows.length+" note"+(BN.rows.length==1?"":"s")}</span></button>`+sp("__tbr","TBR",books.filter(b=>b.tbr).length,200)+sp("__readmfg","Books Read MFG",books.filter(b=>b.read).length,270)+sp("__readmjg","Books Read MJG",books.filter(b=>b.read_mjg).length,320)+sp("__mjg","Safe for MJG",books.filter(b=>b.safe_mjg&&!b.owned).length,30);
   $("hcnt").textContent=books.length?`${books.length} book${books.length==1?"":"s"} in ${gl.length} genre${gl.length==1?"":"s"}`:"";
   $("genres").innerHTML=books.length
     ?tile("","All books",books.length,books.filter(b=>b.read).length,30,books.filter(b=>b.owned).length,Math.max(books.filter(b=>b.owned&&b.read).length,books.filter(b=>b.owned&&b.read_mjg).length),books.filter(b=>b.read_mjg).length)+gl.map(g=>tile(g.genre_id,g.name,by[g.genre_id].n,by[g.genre_id].r,hue(g.genre_id),by[g.genre_id].o,Math.max(by[g.genre_id].d,by[g.genre_id].e),by[g.genre_id].j)).join("")
     :'<p class="m">No books yet. Use “+ Add book” or “Import CSV” to get started.</p>';
 }
 function render(){renderHome();renderList();renderBingo()}
+/* ---------- books to be added: quick notes ---------- */
+const BN={rows:[],err:null};
+async function loadBN(){
+  const r=await sb.from("book_notes").select("*").order("created_at",{ascending:true});
+  if(r.error){BN.err=r.error.message;BN.rows=[]}else{BN.err=null;BN.rows=r.data||[]}
+  renderHome();if($("bn").open)bnDraw();
+}
+function bnDraw(){
+  const d=$("bn");
+  d.innerHTML=`<h2 style="margin-top:0">Books to be added</h2><p class="m">Quick notes: an author, a title or a series name. Add them properly to the reading list later.</p>
+  ${BN.err?`<p class="m" role="alert">This list isn't set up yet. Run <strong>add-book-notes.sql</strong> once in Supabase (SQL Editor → New query → paste → Run), then reload. (${esc(BN.err)})</p>`
+  :`<div class="fm"><label>Add a note<input id="bn_t" autocomplete="off" placeholder="Author, title or series"></label></div><div class="tg"><button id="bn_a">Add</button></div>
+  <ul id="bn_l" style="list-style:none;padding:0;margin:10px 0">${BN.rows.length?BN.rows.slice().reverse().map(n=>`<li style="display:flex;gap:8px;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--bd)"><span style="overflow-wrap:anywhere">${esc(n.note)}</span><button data-bnd="${esc(n.note_id)}" aria-label="Remove ${esc(n.note)}">Remove</button></li>`).join(""):'<li class="m">Nothing here yet.</li>'}</ul>`}
+  <p class="m" id="bn_m" role="status"></p><div class="tg"><button id="bn_x">Close</button></div>`;
+  $("bn_x").onclick=()=>d.close();
+  if(BN.err)return;
+  const add=async()=>{
+    const v=$("bn_t").value.trim();if(!v){$("bn_m").textContent="Type something first.";return}
+    $("bn_a").disabled=true;
+    const r=await sb.from("book_notes").insert({note:v}).select().single();
+    if(r.error){$("bn_m").textContent="Could not save: "+r.error.message;$("bn_a").disabled=false;return}
+    BN.rows.push(r.data);renderHome();bnDraw();$("bn_t").focus();
+  };
+  $("bn_a").onclick=add;$("bn_t").onkeydown=e=>{if(e.key=="Enter")add()};
+  $("bn_l").onclick=async e=>{
+    const b=e.target.closest("[data-bnd]");if(!b)return;b.disabled=true;
+    const r=await sb.from("book_notes").delete().eq("note_id",b.dataset.bnd);
+    if(r.error){$("bn_m").textContent="Could not remove: "+r.error.message;b.disabled=false;return}
+    BN.rows=BN.rows.filter(n=>n.note_id!=b.dataset.bnd);renderHome();bnDraw();
+  };
+}
+document.addEventListener("click",e=>{if(e.target.closest("[data-bn]")){bnDraw();$("bn").showModal();if($("bn_t"))$("bn_t").focus()}});
 let special=null,filtersHidden=false,wishView="list";try{wishView=localStorage.getItem("wishView")==="genres"?"genres":"list"}catch(e){}
 try{filtersHidden=localStorage.getItem("filtersHidden")==="1"}catch(e){}
 function go(g,push,fresh,ser,wg){
